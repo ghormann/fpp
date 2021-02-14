@@ -1,22 +1,26 @@
 #!/usr/bin/php
 
 <?
-
-$pauseAmount = 0; // Number of seconds to pause between activites
+$skipJSsettings = 1;
+require_once '../www/config.php';
 
 //////////// MAIN ////////////
+$pauseAmount = 0; // Number of seconds to pause between activites
 $tasks = array(
+    "uuid" => 'getUUID',
     "systemInfo" => 'getSystemInfo',
+    "capeInfo" => 'getCapeInfo',
     "outputProcessors" => 'getOutputProcessors',
     "files" => 'getFiles',
     "models" => 'getModels',
     "multisync" => 'getMultiSync',
     "plugins" => 'getPlugins',
     "schedule" => 'getSchedule',
-
+    "settings" => 'getSettings',
 );
 
 foreach ($tasks as $key => $fun) {
+    sleep($pauseAmount);
     try {
         $obj[$key] = call_user_func($fun);
     } catch (exception $e) {
@@ -176,6 +180,46 @@ function getPlugins()
     $data = json_decode(file_get_contents("http://localhost/api/plugin"), true);
     return $data;
 
+}
+
+function getUUID()
+{
+    $output = array();
+    exec("/opt/fpp/scripts/get_uuid", $output);
+
+    return $output[0];
+}
+
+function getCapeInfo()
+{
+    $rc = array("type" => "None");
+    $data = json_decode(file_get_contents("http://localhost/api/cape"), true);
+    if ($data != false) {
+        if (isset($data['name'])) {
+            $rc['type'] = $data['name'];
+        }
+    }
+
+    return $rc;
+}
+
+function getSettings()
+{
+    global $settings;
+    $rc = array();
+    //TODO: Add a new tag to settings.json of which seetings to keep
+    $safeSettings = array(
+        "BridgeInputDelayBeforeBlack" => "BridgeInputDelayBeforeBlack",
+        "uiLevel" => "uiLevel",
+        "emailenable" => "emailenable",
+        "AudioFormat" => "AudioFormat",
+        "AudioOutput" => "AudioOutput",
+        "CompressMultiSyncTransfers" => "CompressMultiSyncTransfers"
+    );
+    validateAndAdd($rc, $settings, $safeSettings);
+
+
+    return $rc;
 }
 
 ?>
