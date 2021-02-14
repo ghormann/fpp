@@ -182,7 +182,7 @@ $(function() {
 	{
 		$('#fileText').html("Loading...");
 
-		$.get("fppxml.php?command=getFile&dir=Scripts&filename=" + scriptName, function(text) {
+		$.get("api/Scripts/" + scriptName, function(text) {
 			var ext = scriptName.split('.').pop();
 			if (ext != "html")
 			{
@@ -323,7 +323,7 @@ h2 {
     <div id="tab-video">
       <div id= "divVideo">
         <fieldset  class="fs">
-          <legend> Video Files (.mp4/.mkv) </legend>
+          <legend> Video Files (.mp4/.mkv/.avi/.mov/.mpeg) </legend>
           <div id="divVideoData">
             <table id="tblVideos">
             </table>
@@ -345,7 +345,7 @@ h2 {
     <div id="tab-images">
       <div id= "divImage">
         <fieldset  class="fs">
-          <legend> Images </legend>
+          <legend> Images (.gif/.jpg/.jpeg/.png)</legend>
           <div id="divImageData">
             <table id="tblImages">
             </table>

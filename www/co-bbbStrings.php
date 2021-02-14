@@ -440,7 +440,7 @@ function BBB48StringDifferentialTypeChangedTo(port, val) {
 
 
 function populatePixelStringOutputs(data) {
-    if (data) {
+    if ("channelOutputs" in data) {
         for (var opi = 0; opi < data.channelOutputs.length; opi++) {
             var output = data.channelOutputs[opi];
             var type = output.type;
@@ -664,7 +664,7 @@ function populatePixelStringOutputs(data) {
     }
 }
 function ValidateBBBStrings(data) {
-    if (data) {
+    if ("channelOutputs" in data) {
         for (var i = 0; i < data.channelOutputs.length; i++) {
             var output = data.channelOutputs[i];
             var type = output.type;
@@ -703,7 +703,7 @@ function ValidateBBBStrings(data) {
 function BBB48StringSubTypeChanged()
 {
     if (PixelStringLoaded) {
-        $.getJSON("fppjson.php?command=getChannelOutputs&file=co-bbbStrings", function(data) {
+        $.getJSON("api/channel/output/co-bbbStrings", function(data) {
                   for (var i = 0; i < data.channelOutputs.length; i++)
                   {
                     var output = data.channelOutputs[i];
@@ -773,7 +773,7 @@ function loadBBBOutputs() {
     defaultData.channelOutputs.push(output);
     
     populatePixelStringOutputs(defaultData);
-    $.getJSON("fppjson.php?command=getChannelOutputs&file=co-bbbStrings", function(data) {
+    $.getJSON("api/channel/output/co-bbbStrings", function(data) {
                 PixelStringLoaded = true;
                 ValidateBBBStrings(data);
                 populatePixelStringOutputs(data)
@@ -783,10 +783,7 @@ function saveBBBOutputs() {
     var postData = getPixelStringOutputJSON();
     postData = addSerialOutputJSON(postData);
     
-	// Double stringify so JSON in .json file is surrounded by { }
-	postData = "command=setChannelOutputs&file=co-bbbStrings&data=" + encodeURIComponent(JSON.stringify(JSON.stringify(postData)));
-
-	$.post("fppjson.php", postData).done(function(data) {
+	$.post("api/channel/output/co-bbbStrings", JSON.stringify(postData)).done(function(data) {
 		$.jGrowl("Pixel String Output Configuration Saved");
 		SetRestartFlag(1);
 	}).fail(function() {
@@ -811,6 +808,10 @@ function populateCapeList() {
 }
 
 $(document).ready(function(){
+    if (currentCapeName != "") {
+        $('.capeName').html(currentCapeName);
+    }
+
     populateCapeList();
     loadBBBOutputs();
 });
@@ -819,12 +820,12 @@ $(document).ready(function(){
 <div id='tab-BBB48String'>
 	<div id='divBBB48String'>
 		<fieldset class="fs">
-			<legend> BeagleBone String Capes </legend>
+			<legend> BeagleBone <span class='capeName'>String Capes</span> </legend>
 			<div id='divBBB48StringData'>
 				<div style="overflow: hidden; padding: 10px;">
 					<table border=0 cellspacing=3>
 						<tr>
-							<td><b>Enable BBB String Cape:</b></td>
+							<td><b>Enable <span class='capeName'>BBB String Cape</span>:</b></td>
 							<td><input id='BBB48String_enable' type='checkbox'></td>
 							<td width=20>&nbsp;</td>
 							<td width=20>&nbsp;</td>

@@ -11,6 +11,13 @@ dispatch_get   ('/backups/devices', 'GetAvailableBackupsDevices');
 
 dispatch_get   ('/cape', 'GetCapeInfo');
 
+dispatch_get   ('/channel/input/stats', 'channel_input_get_stats');
+dispatch_get   ('/channel/output/processors', 'channel_get_output_processors');
+dispatch_post  ('/channel/output/processors', 'channel_save_output_processors');
+dispatch_get   ('/channel/output/:file', 'channel_get_output');
+dispatch_post  ('/channel/output/:file', 'channel_save_output');
+
+
 dispatch_get   ('/configfile', 'GetConfigFileList');
 dispatch_get   ('/configfile/**', 'DownloadConfigFile');
 dispatch_post  ('/configfile/**', 'UploadConfigFile');
@@ -27,8 +34,13 @@ dispatch_get   ('/events/:eventId', 'event_get');
 dispatch_get   ('/events/:eventId/trigger', 'event_trigger');
 
 dispatch_get   ('/files/:DirName', 'GetFiles');
+dispatch_get   ('/files/zip/:DirName', 'GetZipDir');
+dispatch_get   ('/file/move/:fileName', 'MoveFile'); // keep above file/:DirName
+dispatch_get   ('/file/:DirName/:Name', 'GetFile');
+dispatch_delete('/file/:DirName/:Name', 'DeleteFile');
 
 dispatch_get   ('/git/originLog', 'GetGitOriginLog');
+dispatch_get   ('/git/reset', 'GitReset');
 dispatch_get   ('/git/status', 'GitStatus');
 
 
@@ -36,10 +48,14 @@ dispatch_get   ('/media', 'GetMedia');
 dispatch_get   ('/media/:MediaName/duration', 'GetMediaDuration');
 dispatch_get   ('/media/:MediaName/meta', 'GetMediaMetaData');
 
+dispatch_get   ('/network/dns', 'network_get_dns');
+dispatch_post  ('/network/dns', 'network_save_dns');
 dispatch_get   ('/network/interface', 'network_list_interfaces');
 dispatch_delete('/network/presisentNames', 'network_presisentNames_delete');
 dispatch_post  ('/network/presisentNames', 'network_presisentNames_create');
-dispatch_get   ('/network/wifi_strength', 'network_wifi_strength');
+dispatch_get   ('/network/wifi/scan/:interface', 'network_wifi_scan');
+dispatch_get   ('/network/wifi/strength', 'network_wifi_strength');
+dispatch_get   ('/network/wifi_strength', 'network_wifi_strength'); // Legacy mapping
 
 
 dispatch_get   ('/options/:SettingName', 'GetOptions');
@@ -91,10 +107,20 @@ dispatch_get   ('/settings/:SettingName/options', 'GetOptions');
 dispatch_put   ('/settings/:SettingName', 'PutSetting');
 
 dispatch_get   ('/scripts', 'scripts_list');
+dispatch_get   ('/scripts/installRemote/:category/:filename', 'scripts_install_remote');
+dispatch_get   ('/scripts/viewRemote/:category/:filename', 'scripts_view_remote');
 dispatch_get   ('/scripts/:scriptName', 'script_get');
 dispatch_get   ('/scripts/:scriptName/run', 'script_run');
 
+dispatch_get   ('/system/fppd/restart', 'RestartFPPD');
+dispatch_get   ('/system/fppd/start', 'StartFPPD');
+dispatch_get   ('/system/fppd/stop', 'StopFPPD');
 dispatch_get   ('/system/reboot', 'RebootDevice');
+dispatch_get   ('/system/releaseNotes/:version', 'ViewReleaseNotes');
+dispatch_get   ('/system/shutdown', 'SystemShutdownOS');
+dispatch_get   ('/system/status', 'SystemGetStatus');
+dispatch_get   ('/system/volume', 'SystemGetAudio');
+dispatch_post  ('/system/volume', 'SystemSetAudio');
 
 dispatch_get   ('/time', 'GetTime');
 

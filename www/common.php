@@ -20,6 +20,14 @@ function startsWith( $haystack, $needle ) {
 	return substr( $haystack, 0, $length ) === $needle;
 }
 
+function endsWith( $haystack, $needle ) {
+    $length = strlen( $needle );
+    if( !$length ) {
+        return true;
+    }
+    return substr( $haystack, -$length ) === $needle;
+}
+
 function getFileList($dir, $ext)
 {
   $i = array();
@@ -1684,6 +1692,24 @@ function network_wifi_strength_obj()
 	return $rc;
 }
 
+function network_list_interfaces_obj()
+{
+	$output = array();
+	$cmd = "ip --json -4 address show";
+	exec($cmd, $output);
+	$rc = json_decode(join(" ", $output), true);
+	$wifiObj = network_wifi_strength_obj();
+
+	// Merge two objects
+	foreach ($wifiObj as $wifi) {
+		foreach ($rc as &$rec) {
+			if ($rec["ifname"] == $wifi->interface) {
+				$rec["wifi"] = $wifi;
+			}
+		}
+	}
+	return $rc;
+}
 
 // Return array of FPP Only systems
 function getKnownFPPSystems() {

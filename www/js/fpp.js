@@ -285,6 +285,32 @@ function GetAsync(url) {
     return Get(url, true);
 }
 
+function SetElementValue(elem, val) {
+    if (($(elem)[0].tagName == 'INPUT') ||
+        ($(elem)[0].tagName == 'SELECT')) {
+        $(elem).val(val);
+    } else {
+        $(elem).html(val);
+    }
+}
+
+function GetItemCount(url, id, key = '') {
+    $.ajax({
+        url: url,
+        type: 'GET',
+        dataType: 'json',
+        success: function(data) {
+            if (key != '')
+                SetElementValue($('#' + id), data[key].length);
+            else
+                SetElementValue($('#' + id), data.length);
+        },
+        error: function() {
+            SetElementValue($('#' + id), 'Unknown');
+        }
+    });
+}
+
 function SetupToolTips(delay = 100) {
     $(document).tooltip({
         content: function() {
@@ -862,9 +888,9 @@ function PlaylistNameOK(name) {
 }
 
 function LoadNetworkDetails(){
-    $.get('/api/network/interface'
+    $.get('api/network/interface'
     ).done(function(data) {
-       $.get('/api/network/wifi_strength'
+       $.get('api/network/wifi/strength'
        ).done(function(wifiData) {
           var rc = [];
           data.forEach(function(e) {
@@ -1630,11 +1656,11 @@ function RemovePlaylistEntry()	{
 				$('#dialog-help').dialog({ height: 800, width: 800, title: "Release Notes for FPP v" + version });
 				$('#dialog-help').dialog( "moveToTop" );
 
-				$.get("fppxml.php?command=viewReleaseNotes&version=" + version
+				$.get("api/system/releaseNotes/" + version
 				).done(function(data) {
 						$('#helpText').html(
 						"<center><input onClick='UpgradeFPPVersion(\"" + version + "\");' type='button' class='buttons' value='Upgrade'></center>" +
-						"<pre style='white-space: pre-wrap; word-wrap: break-word;'>" + data + "</pre>"
+						"<pre style='white-space: pre-wrap; word-wrap: break-word;'>" + data.body + "</pre>"
 						);
 				}).fail(function() {
 						$('#helpText').html("Error loading release notes.");
@@ -1825,7 +1851,16 @@ function updateUniverseEndChannel(row) {
             var inputStr = 'Output';
             var anyEnabled = 0;
 
-            var channelData = input ? data.channelInputs[0] : data.channelOutputs[0];
+            // Incase none found
+            var channelData = {
+                universes: []
+            };
+
+            if (input && ("channelInputs" in data)) {
+                channelData = data.channelInputs[0];
+            } else if ("channelOutputs" in data) {
+                channelData = data.channelOutputs[0];
+            }
         
             if (input) {
                 inputStr = 'Input';
@@ -1838,7 +1873,6 @@ function updateUniverseEndChannel(row) {
                     $("#E131ThreadedOutput").prop( "checked", channelData.threaded );
                 }
             }
-            
             UniverseCount = channelData.universes.length;
             for (var i = 0; i < channelData.universes.length; i++) {
                 var universe = channelData.universes[i];
@@ -1962,9 +1996,9 @@ function updateUniverseEndChannel(row) {
 		}
         function getUniverses(reload, input)
         {
-            var url = "fppjson.php?command=getChannelOutputs&file=universeOutputs";
+            var url = "api/channel/output/universeOutputs";
             if (input) {
-                url = "fppjson.php?command=getChannelOutputs&file=universeInputs";
+                url = "api/channel/output/universeInputs";
             }
             $.getJSON(url, function(data) {
                         populateUniverseData(data, reload, input)
@@ -2177,67 +2211,67 @@ function updateUniverseEndChannel(row) {
 			}
 		}
 
-        function postUniverseJSON(input) {
-            var postData = {};
-            var anyEnabled = 0;
-            
-            var output = {};
-            output.type = "universes";
-            if (!input) {
-                output.enabled = document.getElementById("E131Enabled").checked ? 1 : 0;
-                output.interface = document.getElementById("selE131interfaces").value;
-                output.threaded = document.getElementById("E131ThreadedOutput").checked ? 1 : 0;
-            } else {
-                output.enabled = 1;
-            }
-            output.startChannel = 1;
-            output.channelCount = -1;
-            output.universes = [];
-            
-            var i;
-            for(i = 0; i < UniverseCount; i++) {
-                var universe = {};
-                universe.active = document.getElementById("chkActive[" + i + "]").checked ? 1 : 0;
-                anyEnabled |= universe.active;
-                universe.description = document.getElementById("txtDesc[" + i + "]").value;;
-                universe.id = parseInt(document.getElementById("txtUniverse[" + i + "]").value);
-                universe.startChannel = parseInt(document.getElementById("txtStartAddress[" + i + "]").value);
-                universe.universeCount = parseInt(document.getElementById("numUniverseCount[" + i + "]").value);
+function postUniverseJSON(input) {
+    var postData = {};
+    var anyEnabled = 0;
 
-                universe.channelCount = parseInt(document.getElementById("txtSize[" + i + "]").value);
-                universe.type = parseInt(document.getElementById("universeType[" + i + "]").value);
-                universe.address = document.getElementById("txtIP[" + i + "]").value;
-                universe.priority = parseInt(document.getElementById("txtPriority[" + i + "]").value);
-                if (!input) {
-                    universe.monitor = document.getElementById("txtMonitor[" + i + "]").checked ? 1 : 0;
-                    universe.deDuplicate = document.getElementById("txtDeDuplicate[" + i + "]").checked ? 1 : 0;
-                }
-                output.universes.push(universe);
-            }
-            if (input) {
-                postData.channelInputs = [];
-                postData.channelInputs.push(output);
-            } else {
-                postData.channelOutputs = [];
-                postData.channelOutputs.push(output);
-            }
-            var fileName = input ? 'universeInputs' : 'universeOutputs';
-            var postDataString = 'command=setChannelOutputs&file='+ fileName +'&data={' + encodeURIComponent(JSON.stringify(postData)) + '}';
+    var output = {};
+    output.type = "universes";
+    if (!input) {
+        output.enabled = document.getElementById("E131Enabled").checked ? 1 : 0;
+        output.interface = document.getElementById("selE131interfaces").value;
+        output.threaded = document.getElementById("E131ThreadedOutput").checked ? 1 : 0;
+    } else {
+        output.enabled = 1;
+    }
+    output.startChannel = 1;
+    output.channelCount = -1;
+    output.universes = [];
 
-            if (anyEnabled && !output.enabled)
-                $('#outputOffWarning').show();
-            else
-                $('#outputOffWarning').hide();
-            
-            $.post("fppjson.php", postDataString).done(function(data) {
-                                                       $.jGrowl("E1.31 Universes Saved");
-                                                       SetRestartFlag(2);
-                                                       CheckRestartRebootFlags();
-                                                 }).fail(function() {
-                                                        DialogError('Save Universes', "Error: Unable to save E1.31 Universes.");
-                                                  });
-            
+    var i;
+    for (i = 0; i < UniverseCount; i++) {
+        var universe = {};
+        universe.active = document.getElementById("chkActive[" + i + "]").checked ? 1 : 0;
+        anyEnabled |= universe.active;
+        universe.description = document.getElementById("txtDesc[" + i + "]").value;;
+        universe.id = parseInt(document.getElementById("txtUniverse[" + i + "]").value);
+        universe.startChannel = parseInt(document.getElementById("txtStartAddress[" + i + "]").value);
+        universe.universeCount = parseInt(document.getElementById("numUniverseCount[" + i + "]").value);
+
+        universe.channelCount = parseInt(document.getElementById("txtSize[" + i + "]").value);
+        universe.type = parseInt(document.getElementById("universeType[" + i + "]").value);
+        universe.address = document.getElementById("txtIP[" + i + "]").value;
+        universe.priority = parseInt(document.getElementById("txtPriority[" + i + "]").value);
+        if (!input) {
+            universe.monitor = document.getElementById("txtMonitor[" + i + "]").checked ? 1 : 0;
+            universe.deDuplicate = document.getElementById("txtDeDuplicate[" + i + "]").checked ? 1 : 0;
         }
+        output.universes.push(universe);
+    }
+    if (input) {
+        postData.channelInputs = [];
+        postData.channelInputs.push(output);
+    } else {
+        postData.channelOutputs = [];
+        postData.channelOutputs.push(output);
+    }
+    var fileName = input ? 'universeInputs' : 'universeOutputs';
+    var postDataString = JSON.stringify(postData);
+
+    if (anyEnabled && !output.enabled)
+        $('#outputOffWarning').show();
+    else
+        $('#outputOffWarning').hide();
+
+    $.post("api/channel/output/" + fileName, postDataString).done(function (data) {
+        $.jGrowl("E1.31 Universes Saved");
+        SetRestartFlag(2);
+        CheckRestartRebootFlags();
+    }).fail(function () {
+        DialogError('Save Universes', "Error: Unable to save E1.31 Universes.");
+    });
+
+}
 
 		function validateUniverseData()
 		{
@@ -2414,48 +2448,40 @@ function GetSequenceArray()
 
   function GetFiles(dir)
   {
-    var xmlhttp=new XMLHttpRequest();
-    var url = "fppxml.php?command=getFiles&dir=" + dir;
-    $('#tbl' + dir).empty();
-    xmlhttp.open("GET",url,false);
-    xmlhttp.setRequestHeader('Content-Type', 'text/xml');
-    xmlhttp.send();
+    $.ajax({
+        dataType: "json",
+        url: "api/files/" + dir,
+        success: function(data) {
+            let i = 0;
+            $('#tbl' + dir).html('');
+            data.files.forEach(function(f) {
+                var detail = f.sizeHuman;
+                if ("playtimeSeconds" in f) {
+                    detail = f.playtimeSeconds;
+                }
 
-    var xmlDoc=xmlhttp.responseXML; 
-    var files = xmlDoc.getElementsByTagName('Files')[0];
-    if(files.childNodes.length> 0)
-    {
-      var innerhtml = '';
-      for(i=0; i<files.childNodes.length; i++)
-      {
-        // Thanks: http://stackoverflow.com/questions/5396560/how-do-i-convert-special-utf-8-chars-to-their-iso-8859-1-equivalent-using-javasc
-        var encodedstring = decodeURIComponent(escape(files.childNodes[i].childNodes[0].textContent));
-        var name = "";
-        try{
-            // If the string is UTF-8, this will work and not throw an error.
-            name=decodeURIComponent(escape(encodedstring));
-        }catch(e){
-            // If it isn't, an error will be thrown, and we can asume that we have an ISO string.
-            name=encodedstring;
+                var tableRow = "<tr class='fileDetails' id='fileDetail_" + i + "'><td class ='fileName'>" + f.name + "</td><td class='fileExtraInfo'>" + detail + "</td><td class ='fileTime'>" + f.mtime + "</td></tr>";
+                $('#tbl' + dir).append(tableRow);
+                ++i;
+            });
+        },
+        error: function() {
+            DialogError('Load Sequences', 'Error loading list of sequences');
         }
 
-        var time = files.childNodes[i].childNodes[1].textContent.replace(/ /g, '&nbsp;');
-        var fileInfo = files.childNodes[i].childNodes[2].textContent;
+    });
+}
 
-          var tableRow = "<tr class='fileDetails' id='fileDetail_" + i + "'><td class ='fileName'>" + name + "</td><td class='fileExtraInfo'>" + fileInfo + "</td><td class ='fileTime'>" + time + "</td></tr>";
-        $('#tbl' + dir).append(tableRow);
-      }
-    }
-  }
-
-	function moveFile(file)
-	{
-    	var xmlhttp=new XMLHttpRequest();
-			var url = "fppxml.php?command=moveFile&file=" + encodeURIComponent(file);
-			xmlhttp.open("GET",url,false);
-			xmlhttp.setRequestHeader('Content-Type', 'text/xml');
-			xmlhttp.send();
-	}
+function moveFile(file) {
+    $.get("api/file/move/" + encodeURIComponent(file)
+    ).done(function (data) {
+        if ("OK" != data.status) {
+            DialogError('File Move Error', data.status);
+        }
+    }).fail(function (data) {
+        DialogError('File Move Error', "Unexpected error while to move file");
+    });
+}
 
 	function updateFPPStatus()
 	{
@@ -2538,13 +2564,25 @@ function GetSequenceArray()
     }
 	function GetFPPStatus()	{
 		$.ajax({
-			url: 'fppjson.php?command=getFPPstatus',
+			url: 'api/system/status',
 			dataType: 'json',
 			success: function(response, reqStatus, xhr) {	
 				
 				if(response && typeof response === 'object') {
 
 					if(response.status_name == 'stopped') {
+
+                        if ( ! ("warnings" in response)) {
+                            response.warnings = [];
+                        }
+                        response.warnings.push('FPPD Daemon is not running');
+
+                        $.get("api/system/volume"
+                        ).done(function(data){
+                            updateVolumeUI(parseInt(data.volume));
+                        }).fail(function(){
+                            DialogError('Volume Query Failed', "Failed to query Volume when FPPD stopped");
+                        });
 						
 						$('#fppTime').html('');
 						SetButtonState('#btnDaemonControl','enable');
@@ -2557,7 +2595,9 @@ function GetSequenceArray()
 						$('#schedulerStatus').html("");
 						$('.schedulerStartTime').hide();
 						$('.schedulerEndTime').hide();
-                                                $('#mqttRow').hide()
+                        $('#mqttRow').hide()
+                        updateWarnings(response);
+
 					
 					} else if(response.status_name == 'updating') {
 
@@ -2572,7 +2612,7 @@ function GetSequenceArray()
 						$('#schedulerStatus').html("");
 						$('.schedulerStartTime').hide();
 						$('.schedulerEndTime').hide();
-                                                $('#mqttRow').hide()
+                        $('#mqttRow').hide()
 
 					} else {
 
@@ -2595,6 +2635,20 @@ function GetSequenceArray()
 		})
 	}
 
+function updateWarnings(jsonStatus) {
+    if (jsonStatus.hasOwnProperty('warnings')) {
+        var txt = "<hr><center><b>Abnormal Conditions - May Cause Poor Performance</b></center>";
+        for (var i = 0; i < jsonStatus.warnings.length; i++) {
+            txt += "<font color='red'><center>" + jsonStatus.warnings[i] + "</center></font>";
+        }
+        document.getElementById('warningsDiv').innerHTML = txt;
+        $('#warningsRow').show();
+    } else {
+        $('#warningsRow').hide();
+    }
+}
+
+
     function modeToString(mode) {
         switch (mode) {
             case 1: return "Bridge";
@@ -2606,7 +2660,16 @@ function GetSequenceArray()
         return "Unknown Mode";
     }
 
-	var firstStatusLoad = 1;
+function updateVolumeUI(Volume) {
+    $('#volume').html(Volume);
+    $('#remoteVolume').html(Volume);
+    $('#slider').slider('value', Volume);
+    $('#remoteVolumeSlider').slider('value', Volume);
+    SetSpeakerIndicator(Volume);
+}
+
+    var firstStatusLoad = 1;
+    
 	function parseStatus(jsonStatus) {
 		var fppStatus = jsonStatus.status;
 		var fppMode = jsonStatus.mode;
@@ -2624,12 +2687,7 @@ function GetSequenceArray()
 			$('#daemonStatus').html("FPPD is running.");
 		}
 
-		var Volume = parseInt(jsonStatus.volume);
-		$('#volume').html(Volume);
-        $('#remoteVolume').html(Volume);
-		$('#slider').slider('value', Volume);
-        $('#remoteVolumeSlider').slider('value', Volume);
-		SetSpeakerIndicator(Volume);
+        updateVolumeUI(parseInt(jsonStatus.volume));
 
         AdjustFPPDModeFromStatus(fppMode);
 	if (jsonStatus.hasOwnProperty('MQTT')) {
@@ -2644,19 +2702,9 @@ function GetSequenceArray()
            $('#mqttRow').hide()
 	}
 
-        
-        if (jsonStatus.hasOwnProperty('warnings')) {
-            var txt = "<hr><center><b>Abnormal Conditions - May Cause Poor Performance</b></center>";
-            for (var i = 0; i < jsonStatus.warnings.length; i++) {
-                txt += "<font color='red'><center>" + jsonStatus.warnings[i] + "</center></font>";
-            }
-            document.getElementById('warningsDiv').innerHTML = txt;
-            $('#warningsRow').show();
-        } else {
-            $('#warningsRow').hide();
-        }
+    updateWarnings(jsonStatus);
 
-		if (fppMode == 1) {
+        if (fppMode == 1) {
 			// Bridge Mode
 			$('#fppTime').html(jsonStatus.time);
 
@@ -2936,62 +2984,60 @@ function GetMultiSyncStats()
     });
 }
 
-	function GetUniverseBytesReceived()
-	{	
-		var html='';
-		var html1='';
-    var xmlhttp=new XMLHttpRequest();
-		var url = "fppxml.php?command=getUniverseReceivedBytes";
-		xmlhttp.open("GET",url,true);
-		xmlhttp.setRequestHeader('Content-Type', 'text/xml');
-		xmlhttp.onreadystatechange = function () {
-			if (xmlhttp.readyState == 4 && xmlhttp.status==200) 
-			{
-					var xmlDoc=xmlhttp.responseXML; 
-					var receivedBytes = xmlDoc.getElementsByTagName('receivedBytes')[0];
-					if(receivedBytes && receivedBytes.childNodes.length> 0)
-					{
-						html =  "<table>";
-						html += "<tr id=\"rowReceivedBytesHeader\"><td>Universe</td><td>Start Address</td><td>Packets</td><td>Bytes</td><td>Errors</td></tr>";
+function GetUniverseBytesReceived() {
+    var html = [];
+    var html1 = '';
+    $.get("api/channel/input/stats"
+    ).done(function (data) {
+        if (data.status == "OK") {
+            var maxRows = data.universes.length / 2;
+            if (maxRows < 32) {
+                maxRows = 32;
+            }
+            if (data.universes.length > 0) {
+                html.push('<table>');
+                html.push("<tr id=\"rowReceivedBytesHeader\"><td>Universe</td><td>Start Address</td><td>Packets</td><td>Bytes</td><td>Errors</td></tr>");
+            }
+            for (i = 0; i < data.universes.length; i++) {
+                if (i == maxRows) {
+                    html.push("</table>");
+                    html1 = html.join('');
+                    html = [];
+                    html.push('<table>');
+                    html.push("<tr id=\"rowReceivedBytesHeader\"><td>Universe</td><td>Start Address</td><td>Packets</td><td>Bytes</td><td>Errors</td></tr>");
+                }
+                html.push('<tr><td>');
+                html.push(data.universes[i].id);
+                html.push('</td><td>');
+                html.push(data.universes[i].startChannel);
+                html.push('</td><td>');
+                html.push(data.universes[i].packetsReceived);
+                html.push('</td><td>');
+                html.push(data.universes[i].bytesReceived);
+                html.push('</td><td>');
+                html.push(data.universes[i].errors);
+                html.push('</td></tr>');
+            }
+            html.push('</table>');
+            if (data.universes.length > 32) {
+                $("#bridgeStatistics1").html(html1);
+                $("#bridgeStatistics2").html(html.join(''));
+            } else {
+                $("#bridgeStatistics1").html(html.join(''));
+                $("#bridgeStatistics2").html('');
 
-                        var i;
-                        var maxRows = receivedBytes.childNodes.length / 2;
-                        if (maxRows < 32) {
-                            maxRows = 32;
-                        }
-						for(i=0;i<receivedBytes.childNodes.length;i++)
-						{
-								if(i==maxRows)
-								{
-									html += "</table>";
-									html1 = html;
-									html =  "<table>";
-									html += "<tr id=\"rowReceivedBytesHeader\"><td>Universe</td><td>Start Address</td><td>Packets</td><td>Bytes</td><td>Errors</td></tr>";
-								}
-								var universe = receivedBytes.childNodes[i].childNodes[0].textContent;
-								var startChannel = receivedBytes.childNodes[i].childNodes[1].textContent;
-								var bytes = receivedBytes.childNodes[i].childNodes[2].textContent;
-								var packets = receivedBytes.childNodes[i].childNodes[3].textContent;
-                                var errors = receivedBytes.childNodes[i].childNodes[4].textContent;
-								html += "<tr><td>" + universe + "</td>";
-								html += "<td>" + startChannel + "</td><td>" + packets + "</td><td>" + bytes + "</td><td>" + errors + "</td></tr>";
-						}
-						html += "</table>";
-					}
-					if(receivedBytes && receivedBytes.childNodes.length>32)
-					{
-						$("#bridgeStatistics1").html(html1);
-						$("#bridgeStatistics2").html(html);
-					}
-					else
-					{
-						$("#bridgeStatistics1").html(html);
-						$("#bridgeStatistics2").html('');
-					}					
-			}
-		};
-		xmlhttp.send();
-	}
+            }
+
+        } else {
+            // data.status != OK
+            $("#bridgeStatistics1").html('Bridge Data not avaiable -- ' + data.status);
+            $("#bridgeStatistics2").html('');
+        }
+    }).fail(function () {
+        $("#bridgeStatistics1").html('Failed to refresh Bridge Stats - Unknown Error');
+        $("#bridgeStatistics2").html('');
+    });
+}
 	
 	function UpdateCurrentEntryPlaying(index,lastIndex)
 	{
@@ -3234,7 +3280,7 @@ function RestartFPPD() {
 			args = "&quick=1";
 
 		$('html,body').css('cursor','wait');
-		$.get("fppxml.php?command=restartFPPD" + args
+		$.get("api/system/fppd/restart" + args
 		).done(function() {
 			$('html,body').css('cursor','auto');
 			$.jGrowl('FPPD Restarted');
@@ -3292,29 +3338,28 @@ function zeroPad(num, places) {
 	return Array(+(zero > 0 && zero)).join("0") + num;
 }
 	
-function ControlFPPD()
-	{
-    var xmlhttp=new XMLHttpRequest();
-		var btnVal = $("#btnDaemonControl").attr('value');
-		if(btnVal == "Stop FPPD")
-		{
-			var url = "fppxml.php?command=stopFPPD";
-		}
-		else
-		{
-			var url = "fppxml.php?command=startFPPD";
-		}
-		xmlhttp.open("GET",url,true);
-		xmlhttp.setRequestHeader('Content-Type', 'text/xml');
-		xmlhttp.onreadystatechange = function () {
-			if (xmlhttp.readyState == 4 && xmlhttp.status==200) 
-			{
-				var i = 19;
-			}
-		};
-		xmlhttp.send();
-	}
-	
+function ControlFPPD() {
+    var url = "api/system/fppd/";
+    var btnVal = $("#btnDaemonControl").attr('value');
+
+    if (btnVal == "Stop FPPD") {
+        url = url + "stop";
+    }
+    else {
+        url = url + "start";
+    }
+
+    $.get({
+        url: url,
+        data: "",
+    }).done(function(data) {
+        $.jGrowl("Completed " + btnVal);
+    }).fail(function() {
+        DialogError("ERROR", "Error Settng fppMode to " + modeText);
+    });
+
+}
+
 function PopulatePlaylists(sequencesAlso)
 {
     var playlistOptionsText="";
@@ -3351,77 +3396,70 @@ function PlayPlaylist(Playlist, goToStatus = 0)
     });
 }
 
-function StartPlaylistNow()
-	{
-		var Playlist =  $("#playlistSelect").val();
-        var xmlhttp=new XMLHttpRequest();
-		var repeat = $("#chkRepeat").is(':checked')?'checked':'unchecked';
-		var url = "fppxml.php?command=startPlaylist&playList=" + Playlist + "&repeat=" + repeat + "&playEntry=" + PlayEntrySelected + "&section=" + PlaySectionSelected ;
-		xmlhttp.open("GET",url,true);
-		xmlhttp.setRequestHeader('Content-Type', 'text/xml');
-		xmlhttp.send();
-	}
+function StartPlaylistNow() {
+    var Playlist = $("#playlistSelect").val();
+    var repeat = $("#chkRepeat").is(':checked') ? true : false;
+    var obj = {
+        command: "Start Playlist At Item",
+        args: [
+            Playlist,
+            PlayEntrySelected,
+            repeat,
+            false
+        ]
+    }
+    $.post("api/command", JSON.stringify(obj)
+    ).done(function () {
+        $.jGrowl("Playlist Started");
+    }).fail(function () {
+        DialogError('Command failed', 'Unable to start Playlist');
+    });
+}
 
-function StopEffect()
-{
-	if (RunningEffectSelectedId < 0)
-		return;
+function StopEffect() {
+    if (RunningEffectSelectedId < 0)
+        return;
 
-	var url = "fppxml.php?command=stopEffect&id=" + RunningEffectSelectedId;
-	var xmlhttp=new XMLHttpRequest();
-	xmlhttp.open("GET",url,false);
-	xmlhttp.setRequestHeader('Content-Type', 'text/xml');
-	xmlhttp.send();
+    var msg = {
+        "command": "Effect Stop",
+        "args": [
+            "block_driveways"
+        ]
+    };
 
-	RunningEffectSelectedId = -1;
-	RunningEffectSelectedName = "";
-	SetButtonState('#btnStopEffect','disable');
-
-	GetRunningEffects();
+    $.post({
+        url: "api/command",
+        data: JSON.stringify(msg)
+    }).done(function (data) {
+        RunningEffectSelectedId = -1;
+        RunningEffectSelectedName = "";
+        SetButtonState('#btnStopEffect', 'disable');
+        GetRunningEffects();
+    }).fail(function () {
+        DialogError('Command failed', 'Call to Stop Effect Failed');
+        GetRunningEffects();
+    });
 }
 
 var gblLastRunningEffectsXML = "";
 
-function GetRunningEffects()
-{
-	var url = "fppxml.php?command=getRunningEffects";
-	var xmlhttp=new XMLHttpRequest();
-	xmlhttp.open("GET",url,true);
-	xmlhttp.setRequestHeader('Content-Type', 'text/xml');
-
-	xmlhttp.onreadystatechange = function () {
-		if (xmlhttp.readyState == 4 && xmlhttp.status==200)
-		{
-			var xmlDoc=xmlhttp.responseXML;
-			var xmlText = new XMLSerializer().serializeToString(xmlDoc);
-
-			$('#tblRunningEffectsBody').html('');
-			if (xmlText != gblLastRunningEffectsXML)
-			{
-				xmlText = gblLastRunningEffectsXML;
-
-				var entries = xmlDoc.getElementsByTagName('RunningEffects')[0];
-
-				if(entries.childNodes.length> 0)
-				{
-					for(i=0;i<entries.childNodes.length;i++)
-					{
-						id = entries.childNodes[i].childNodes[0].textContent;
-						name = entries.childNodes[i].childNodes[1].textContent;
-
-						if (name == RunningEffectSelectedName)
-						    $('#tblRunningEffectsBody').append('<tr class="effectSelectedEntry"><td width="5%">' + id + '</td><td width="95%">' + name + '</td></tr>');
-                        else
-							$('#tblRunningEffectsBody').append('<tr><td width="5%">' + id + '</td><td width="95%">' + name + '</td></tr>');
-					}
-
-					setTimeout(GetRunningEffects, 1000);
-				}
-			}
-		}
-	}
-
-	xmlhttp.send();
+function GetRunningEffects() {
+    $.get("api/fppd/effects"
+    ).done(function (data) {
+        $('#tblRunningEffectsBody').html('');
+        if ("runningEffects" in data) {
+            data.runningEffects.forEach(function (e) {
+                if (e.name == RunningEffectSelectedName)
+                    $('#tblRunningEffectsBody').append('<tr class="effectSelectedEntry"><td width="5%">' + e.id + '</td><td width="95%">' + e.name + '</td></tr>');
+                else
+                    $('#tblRunningEffectsBody').append('<tr><td width="5%">' + e.id + '</td><td width="95%">' + e.name + '</td></tr>');
+            });
+        }
+        setTimeout(GetRunningEffects, 1000);
+    }).fail(function () {
+        DialogError('Query Failed', 'Failed to refresh running effects.');
+        GetRunningEffects();
+    });
 }
 
 	function RebootPi()
@@ -3442,7 +3480,11 @@ function GetRunningEffects()
                         setTimeout(function () {
                                 location.href="index.php";
                         }, 60000);
+                    },
+                    error: function() {
+                        DialogError('Command failed', 'Command failed');
                     }
+            
                 });    
             }, 1000);
 		} 
@@ -3452,11 +3494,18 @@ function GetRunningEffects()
 	{
 		if (confirm('SHUTDOWN the Falcon Player?'))
 		{
-			var xmlhttp=new XMLHttpRequest();
-			var url = "fppxml.php?command=shutdownPi";
-			xmlhttp.open("GET",url,true);
-			xmlhttp.setRequestHeader('Content-Type', 'text/xml');
-			xmlhttp.send();
+            $.get({
+                url: "api/system/shutdown",
+                data: "",
+                success: function(data) {
+                    //Show FPP is rebooting notification for 60 seconds then reload the page
+                    $.jGrowl('FPP is shutting down..', {life: 60000});
+                },
+                error: function() {
+                    DialogError('Command failed', 'Command failed');
+                }
+        
+            });
 		} 
 	}
 
@@ -3720,51 +3769,45 @@ function SelectPlaylistDetailsEntryRow(index)
 		PlayEntrySelected  = index;
 }
 
-function SetVolume(value)
-{
-			var xmlhttp=new XMLHttpRequest();
-			var url = "fppxml.php?command=setVolume&volume=" + value;
-			xmlhttp.open("GET",url,true);
-			xmlhttp.setRequestHeader('Content-Type', 'text/xml');
-			xmlhttp.send();
+function SetVolume(value) {
+    var obj = {
+        volume: value
+    };
+    $.post({
+        url: "api/system/volume",
+        data: JSON.stringify(obj)
+    }
+    ).done(function (data) {
+        // Nothing
+    }).fail(function () {
+        DialogError("ERROR", "Failed to set volume to " + value);
+    })
 }
 
 function SetFPPDmode()
 {
-	$.get("fppxml.php?command=setFPPDmode&mode=" + $('#selFPPDmode').val()
-	).done(function() {
+    var mode = $('#selFPPDmode').val();
+    var modeText = "unknown"; // 0
+    if (mode == 1) {
+        modeText = "bridge";
+    } else if (mode == 2) {
+        modeText = "player";
+    } else if (mode ==6) {
+        modeText = "master";
+    } else if (mode == 8) {
+        modeText = "remote";
+    }
+
+    $.ajax({
+        url: "api/settings/fppMode",
+        type: 'PUT',
+        data: modeText
+    }).done(function(data) {
 		$.jGrowl("fppMode Saved");
 		RestartFPPD();
-	}).fail(function() {
-		DialogError("FPP Mode Change", "Save Failed");
-	});
-}
-
-function GetVolume()
-{
-    var xmlhttp=new XMLHttpRequest();
-		var url = "fppxml.php?command=getVolume";
-		xmlhttp.open("GET",url,true);
-		xmlhttp.setRequestHeader('Content-Type', 'text/xml');
-		xmlhttp.onreadystatechange = function () {
-			if (xmlhttp.readyState == 4 && xmlhttp.status==200) 
-			{
-					var xmlDoc=xmlhttp.responseXML; 
-					var Volume = parseInt(xmlDoc.getElementsByTagName('Volume')[0].childNodes[0].textContent);
-					if ((Volume < 0) || (Volume == "NaN"))
-					{
-						Volume = 75;
-						SetVolume(Volume);
-					}
-					$('#volume').html(Volume);
-                    $('#remoteVolume').html(Volume);
-					$('#slider').slider('value', Volume);
-                    $('#remoteVolumeSlider').slider('value', Volume);
-					SetSpeakerIndicator(Volume);
-			}
-		};
-		xmlhttp.send();
-
+    }).fail(function() {
+        DialogError("ERROR", "Error Settng fppMode to " + modeText);
+    });
 }
 
 function AdjustFPPDModeFromStatus(mode) {
@@ -3792,35 +3835,42 @@ function AdjustFPPDModeFromStatus(mode) {
 
 function GetFPPDmode()
 {
-    var xmlhttp=new XMLHttpRequest();
-    var url = "fppxml.php?command=getFPPDmode";
-    xmlhttp.open("GET",url,true);
-    xmlhttp.setRequestHeader('Content-Type', 'text/xml');
-    xmlhttp.onreadystatechange = function () {
-        if (xmlhttp.readyState == 4 && xmlhttp.status==200)
-        {
-            var xmlDoc=xmlhttp.responseXML;
-            var mode = parseInt(xmlDoc.getElementsByTagName('mode')[0].childNodes[0].textContent);
-            SetupUIForMode(mode);
-            if(mode == 1) // Bridge Mode
-            {
-                $("#selFPPDmode").prop("selectedIndex",3);
-                $("#textFPPDmode").text("Bridge");
-            } else if (mode == 8) { // Remote Mode
-                $("#selFPPDmode").prop("selectedIndex",2);
-                $("#textFPPDmode").text("Player (Remote)");
-            } else { // Player or Master modes
-                if (mode == 2) { // Player
-                    $("#selFPPDmode").prop("selectedIndex",0);
-                    $("#textFPPDmode").text("Player (Standalone)");
-                } else {
-                    $("#selFPPDmode").prop("selectedIndex",1);
-                    $("#textFPPDmode").text("Player (Master)");
+    $.get("api/settings/fppMode"
+         ).done(function(data) {
+            if ("value" in data) {
+                var mode = 0;
+                if (data.value == "bridge") {
+                    mode = 1;
+                } else if (data.value == "player") {
+                    mode = 2;
+                } else if (data.value == "master") {
+                    mode = 4;
+                } else if (data.value == "remote") {
+                    mode = 8;
                 }
+                SetupUIForMode(mode);
+                if(mode == 1) // Bridge Mode
+                {
+                    $("#selFPPDmode").prop("selectedIndex",3);
+                    $("#textFPPDmode").text("Bridge");
+                } else if (mode == 8) { // Remote Mode
+                    $("#selFPPDmode").prop("selectedIndex",2);
+                    $("#textFPPDmode").text("Player (Remote)");
+                } else { // Player or Master modes
+                    if (mode == 2) { // Player
+                        $("#selFPPDmode").prop("selectedIndex",0);
+                        $("#textFPPDmode").text("Player (Standalone)");
+                    } else {
+                        $("#selFPPDmode").prop("selectedIndex",1);
+                        $("#textFPPDmode").text("Player (Master)");
+                    }
+                }
+            } else {
+                DialogError("Invalid Mode", "Mode API returned unexpected value");
             }
-        }
-    };
-    xmlhttp.send();
+    }).fail(function(data){
+		DialogError("Failed to query Settings", "Could not load mode");
+    });
 }
 
 var helpOpen = 0;
@@ -3893,7 +3943,7 @@ function GetVideoInfo(file)
 
 function PlayFileInBrowser(dir, file)
 {
-	window.open("fppxml.php?command=getFile&play=1&dir=" + dir + "&filename=" + file);
+	window.open("api/file/" + dir + "/" + encodeURIComponent(file) + "?play=1");
 }
 
 function CopyFile(dir, file)
@@ -3930,7 +3980,7 @@ function RenameFile(dir, file)
 
 function DownloadFile(dir, file)
 {
-	location.href="fppxml.php?command=getFile&dir=" + dir + "&filename=" + file;
+	location.href="api/file/" + dir + "/" + encodeURIComponent(file);
 }
 
 function DownloadFiles(dir, files)
@@ -3939,28 +3989,29 @@ function DownloadFiles(dir, files)
         DownloadFile(dir, files[0]);
     } else {
         for (var i = 0; i < files.length; i++) {
-            window.open("fppxml.php?command=getFile&dir=" + dir + "&filename=" + files[i]);
+            window.open("api/file/" + dir + "/" + encodeURIComponent(files[i]));
         }
     }
 }
 
 function DownloadZip(dir)
 {
-	location.href="fppxml.php?command=getZip&dir=" + dir;
+	location.href="api/files/zip/" + dir;
 }
 
 function ViewImage(file)
 {
-	var url = "fppxml.php?command=getFile&dir=Images&filename=" + file + '&attach=0';
+	var url = "api/file/Images/" + encodeURIComponent(file);
 	window.open(url, '_blank');
 }
 
 function ViewFile(dir, file){
-	var url = "fppxml.php?command=getFile&dir=" + dir + "&filename=" + file;
+	var url = "api/file/" + dir + "/" + encodeURIComponent(file);
 	ViewFileImpl(url, file);
 }
 function TailFile(dir, file, lines) {
-	var url = "fppxml.php?command=tailFile&dir=" + dir + "&filename=" + file + "&lines=" + lines;
+    var url = "api/file/" + dir + "/" + encodeURIComponent(file) + "?tail=" + lines;
+    console.log(url);
 	ViewFileImpl(url, file);
 }
 function ViewFileImpl(url, file)
@@ -3984,34 +4035,18 @@ function DeleteFile(dir, row, file)
 		return;
 	}
 
-    $.get("fppxml.php?command=deleteFile&dir=" + dir + "&filename=" + encodeURIComponent(file)
-    ).done(function() {
-        $(row).remove();
+    $.ajax({
+        url: "api/file/" + dir + "/" + encodeURIComponent(file),
+        type: 'DELETE'
+    }).done(function(data) {
+        if (data.status == "OK") {
+            $(row).remove();
+        } else {
+            DialogError("ERROR", "Error deleting file \"" + file + "\": " + data.status);
+        }
     }).fail(function() {
         DialogError("ERROR", "Error deleting file: " + file);
     });
-}
-
-function SaveUSBDongleSettings()
-{
-	var usbDonglePort = $('#USBDonglePort').val();
-	var usbDongleType = $('#USBDongleType').val();
-	var usbDongleBaud = $('#USBDongleBaud').val();
-
-	var xmlhttp=new XMLHttpRequest();
-	var url = "fppxml.php?command=saveUSBDongle&port=" + usbDonglePort +
-				"&type=" + usbDongleType +
-				"&baud=" + usbDongleBaud;
-	xmlhttp.open("GET",url,false);
-	xmlhttp.setRequestHeader('Content-Type', 'text/xml');
-
-	xmlhttp.onreadystatechange = function () {
-		if (xmlhttp.readyState == 4 && xmlhttp.status==200) 
-		{
-			alert("You must restart FPPD for changes to take effect.");
-		}
-	};
-	xmlhttp.send();
 }
 
 function SetupSelectableTableRow(info)

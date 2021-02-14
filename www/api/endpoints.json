@@ -32,6 +32,129 @@
             }
         },
         {
+            "endpoint": "channel/input/stats",
+            "fppd": true,
+            "methods": {
+                "GET": {
+                    "desc": "Returns the E1.31 or DDP statistics for inbound packets. Attempts to return a meaniful error if connection to FPPD fails.",
+                    "output": {
+                        "status": "OK",
+                        "universes": [
+                            {
+                                "bytesReceived": "325632",
+                                "errors": "1",
+                                "id": 1,
+                                "packetsReceived": "636",
+                                "startChannel": 1
+                            },
+                            {
+                                "bytesReceived": "325632",
+                                "errors": "4",
+                                "id": 2,
+                                "packetsReceived": "636",
+                                "startChannel": 513
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "endpoint": "channel/output/processors",
+            "fppd": false,
+            "methods": {
+                "GET": {
+                    "desc": "Returns the current configuration of any output processors.",
+                    "output": {
+                        "outputProcessors": [
+                            {
+                                "type": "Brightness",
+                                "active": 0,
+                                "description": "",
+                                "start": 1,
+                                "count": 10,
+                                "brightness": 50,
+                                "gamma": 1
+                            },
+                            {
+                                "type": "Brightness",
+                                "active": 0,
+                                "description": "",
+                                "start": 100,
+                                "count": 2,
+                                "brightness": 24,
+                                "gamma": 1
+                            }
+                        ],
+                        "status": "OK"
+                    }
+                },
+                "POST": {
+                    "desc": "Overwrites the output Processor settings file with a new configuration and returns back the file after the save",
+                    "input": {
+                        "outputProcessors": [
+                            {
+                                "type": "Brightness",
+                                "active": 0,
+                                "description": "",
+                                "start": 1,
+                                "count": 10,
+                                "brightness": 50,
+                                "gamma": 1
+                            },
+                            {
+                                "type": "Brightness",
+                                "active": 0,
+                                "description": "",
+                                "start": 100,
+                                "count": 2,
+                                "brightness": 24,
+                                "gamma": 1
+                            }
+                        ]
+                    },
+                    "output": {
+                        "outputProcessors": [
+                            {
+                                "type": "Brightness",
+                                "active": 0,
+                                "description": "",
+                                "start": 1,
+                                "count": 10,
+                                "brightness": 50,
+                                "gamma": 1
+                            },
+                            {
+                                "type": "Brightness",
+                                "active": 0,
+                                "description": "",
+                                "start": 100,
+                                "count": 2,
+                                "brightness": 24,
+                                "gamma": 1
+                            }
+                        ],
+                        "status": "OK"
+                    }
+                }
+            }
+        },
+        {
+            "endpoint": "channel/output/:file",
+            "fppd": false,
+            "methods": {
+                "GET": {
+                    "desc": "Returns the current configuration of the specified output in JSON format",
+                    "output": "JSON output varies based on file."
+                },
+                "POST": {
+                    "desc": "Overwrites the specified output configuration file with the specified JSON",
+                    "input": "Format Varies based on File",
+                    "output": "Format Varies based on File"
+                }
+            }
+        },
+        {
             "endpoint": "command/:CommandName(/:Args)",
             "fppd": true,
             "methods": {
@@ -114,15 +237,63 @@
             "endpoint": "files/:DirName",
             "methods": {
                 "GET": {
-                    "desc": "Get list of files in :DirName where :DirName is one of ('config', 'effects', 'events', 'images', 'logs', 'music', 'playlists', 'plugins', 'scripts', 'sequences', 'tmp', 'upload', 'videos').",
-                    "output": [
-                        "PlayIntro.sh",
-                        "TestScript-02.sh",
-                        "TestScript.sh",
-                        "UserCallbackHook.sh",
-                        "fppdWatcher.sh",
-                        "fppdWatcherStart.sh"
-                    ]
+                    "desc": "Get list of files in :DirName where :DirName is one of ('config', 'effects', 'events', 'images', 'logs', 'music', 'playlists', 'plugins', 'scripts', 'sequences', 'tmp', 'upload', 'videos'). If ?nameOnly=1 is supplied then the array will only contain filenames",
+                    "output": {
+                        "status": "ok",
+                        "files": [
+                            {
+                                "name": "Christmas Every Day.mp3",
+                                "mtime": "09/23/20  07:47 PM",
+                                "sizeBytes": 7929000,
+                                "sizeHuman": "7.56MB",
+                                "playtimeSeconds": "03m:46s"
+                            },
+                            {
+                                "name": "Test.mp3",
+                                "mtime": "09/23/20  07:47 PM",
+                                "sizeBytes": 3618722,
+                                "sizeHuman": "3.45MB",
+                                "playtimeSeconds": "03m:46s"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "endpoint": "/files/zip/:DirName",
+            "methods": {
+                "GET": {
+                    "desc": "Dowloads all files in the specified directory in zip format. (Currently only supported where DirName == Logs)",
+                    "output": "A Zip file"
+                }
+            }
+        },
+        {
+            "endpoint": "file/move/:Filename",
+            "methods": {
+                "GET": {
+                    "desc": "Moves the specified file from the uploads directory to the correct subfolder returning a status of \"OK\" or an Error message if not sucessful",
+                    "output": {
+                        "status": "OK"
+                    }
+                }
+            }
+        },
+        {
+            "endpoint": "file/:DirName/:Filename",
+            "methods": {
+                "GET": {
+                    "desc": "Downloads the specified File where :DirName is one of ('config', 'effects', 'events', 'images', 'logs', 'music', 'playlists', 'plugins', 'scripts', 'sequences', 'tmp', 'upload', 'videos'). If ?tail=# is supplied then only the specified number of lines from the end of the file are returned. ?play=1 then will set the content type to be played rather than downloaded.",
+                    "output": "The File Contents"
+                },
+                "DELETE": {
+                    "desc": "Deletes the specified file where :DirName is one of ('config', 'effects', 'events', 'images', 'logs', 'music', 'playlists', 'plugins', 'scripts', 'sequences', 'tmp', 'upload', 'videos'). If ?nameOnly=1 is supplied then the array will only contain filenames",
+                    "output": {
+                        "status": "OK",
+                        "file": "block_driveways.xbkp",
+                        "dir": "uploads"
+                    }
                 }
             }
         },
@@ -131,7 +302,48 @@
             "fppd": true,
             "methods": {
                 "GET": {
-                    "desc": "Gets the current bridge mode input statistics"
+                    "desc": "Gets the current bridge mode input statistics",
+                    "output": {
+                        "Message": "",
+                        "Status": "OK",
+                        "respCode": 200,
+                        "universes": [
+                            {
+                                "bytesReceived": "0",
+                                "errors": "0",
+                                "id": 1,
+                                "packetsReceived": "0",
+                                "startChannel": 1
+                            },
+                            {
+                                "bytesReceived": "0",
+                                "errors": "0",
+                                "id": 2,
+                                "packetsReceived": "0",
+                                "startChannel": 513
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "endpoint": "fppd/effects",
+            "fppd": true,
+            "methods": {
+                "GET": {
+                    "desc": "Gets the current output volume",
+                    "output": {
+                        "Message": "",
+                        "Status": "OK",
+                        "respCode": 200,
+                        "runningEffects": [
+                            {
+                                "id": 0,
+                                "name": "block_driveways"
+                            }
+                        ]
+                    }
                 }
             }
         },
@@ -162,7 +374,64 @@
                             "Sync": "warn"
                         },
                         "Status": "OK",
-                        "Message": ""
+                        "Message": "",
+                        "respCode": 200
+                    }
+                }
+            }
+        },
+        {
+            "endpoint": "fppd/multiSyncStats",
+            "fppd": true,
+            "methods": {
+                "GET": {
+                    "desc": "REturns status about Multisync instances",
+                    "output": {
+                        "Message": "",
+                        "Status": "OK",
+                        "masterHostname": "",
+                        "masterIP": "",
+                        "respCode": 200,
+                        "systems": [
+                            {
+                                "hostname": "",
+                                "lastReceiveTime": "2021-02-13 09:54:02",
+                                "pktBlank": 0,
+                                "pktCommand": 0,
+                                "pktError": 0,
+                                "pktFPPCommand": 0,
+                                "pktPing": 1,
+                                "pktPlugin": 0,
+                                "pktSyncMedOpen": 0,
+                                "pktSyncMedStart": 0,
+                                "pktSyncMedStop": 0,
+                                "pktSyncMedSync": 0,
+                                "pktSyncSeqOpen": 0,
+                                "pktSyncSeqStart": 0,
+                                "pktSyncSeqStop": 0,
+                                "pktSyncSeqSync": 0,
+                                "sourceIP": "192.168.1.145"
+                            },
+                            {
+                                "hostname": "",
+                                "lastReceiveTime": "2021-02-13 09:54:02",
+                                "pktBlank": 0,
+                                "pktCommand": 0,
+                                "pktError": 0,
+                                "pktFPPCommand": 0,
+                                "pktPing": 1,
+                                "pktPlugin": 0,
+                                "pktSyncMedOpen": 0,
+                                "pktSyncMedStart": 0,
+                                "pktSyncMedStop": 0,
+                                "pktSyncMedSync": 0,
+                                "pktSyncSeqOpen": 0,
+                                "pktSyncSeqStart": 0,
+                                "pktSyncSeqStop": 0,
+                                "pktSyncSeqSync": 0,
+                                "sourceIP": "192.168.1.150"
+                            }
+                        ]
                     }
                 }
             }
@@ -173,67 +442,137 @@
             "methods": {
                 "GET": {
                     "desc": "Gets the list of known FPP instances",
-                    "output": [
-                        {
-                            "address": "192.168.1.10",
-                            "channelRanges": "0-7712",
-                            "fppMode": 2,
-                            "fppModeString": "player",
-                            "hostname": "roof",
-                            "lastSeen": 1584566432,
-                            "lastSeenStr": "2020-03-18 14:20:32",
-                            "majorVersion": 4,
-                            "minorVersion": 1000,
-                            "model": "TI AM335x BeagleBone Green",
-                            "type": "BeagleBone Black",
-                            "version": "4.x-master-186-g58f6a91-dirty"
-                        }
-                    ]
+                    "output": {
+                        "Message": "",
+                        "Status": "OK",
+                        "respCode": 200,
+                        "systems": [
+                            {
+                                "address": "192.168.1.10",
+                                "channelRanges": "0-7712",
+                                "fppMode": 2,
+                                "fppModeString": "player",
+                                "hostname": "roof",
+                                "lastSeen": 1584566432,
+                                "lastSeenStr": "2020-03-18 14:20:32",
+                                "majorVersion": 4,
+                                "minorVersion": 1000,
+                                "model": "TI AM335x BeagleBone Green",
+                                "type": "BeagleBone Black",
+                                "version": "4.x-master-186-g58f6a91-dirty"
+                            },
+                            {
+                                "address": "192.168.1.150",
+                                "channelRanges": "0-79383",
+                                "fppMode": 2,
+                                "fppModeString": "player",
+                                "hostname": "FPPDev",
+                                "lastSeen": 1613227416,
+                                "lastSeenStr": "2021-02-13 09:43:36",
+                                "local": 0,
+                                "majorVersion": 4,
+                                "minorVersion": 1,
+                                "model": "Pi 3 Model B",
+                                "multiSyncCapable": 0,
+                                "type": "FPP (unknown hardware)",
+                                "typeId": 1,
+                                "version": "4.1"
+                            }
+                        ]
+                    }
                 }
             }
         },
         {
-            "endpoint": "fppd/testing",
+            "endpoint": "fppd/schedule",
             "fppd": true,
             "methods": {
                 "GET": {
-                    "desc": "Gets the current test mode configuration",
+                    "desc": "Returns a projection of Playlists and other events that are scheculed to start in the near future.",
                     "output": {
-                        "config": {
+                        "Message": "",
+                        "Status": "OK",
+                        "respCode": 200,
+                        "schedule": {
                             "enabled": 1,
-                            "channelSet": "1-1048576",
-                            "channelSetType": "channelRange",
-                            "colorPattern": "FF000000FF000000FF",
-                            "cycleMS": 1000,
-                            "mode": "RGBChase",
-                            "subMode": "RGBChase-RGB"
+                            "entries": [
+                                {
+                                    "day": 7,
+                                    "dayStr": "Everyday",
+                                    "enabled": 1,
+                                    "endDate": "2026-12-31",
+                                    "endTime": "18:00:00",
+                                    "id": 0,
+                                    "playlist": "Test3",
+                                    "repeat": 1,
+                                    "repeatInterval": 0,
+                                    "startDate": "2019-01-01",
+                                    "startTime": "17:00:00",
+                                    "stopType": 0,
+                                    "stopTypeStr": "Graceful",
+                                    "type": "playlist"
+                                },
+                                {
+                                    "args": [],
+                                    "command": "Effects Stop",
+                                    "day": 7,
+                                    "dayStr": "Everyday",
+                                    "enabled": 1,
+                                    "endDate": "2026-12-31",
+                                    "endTime": "24:00:00",
+                                    "id": 3,
+                                    "multisyncCommand": true,
+                                    "multisyncHosts": "192.168.1.149",
+                                    "playlist": "",
+                                    "repeat": 1,
+                                    "repeatInterval": 0,
+                                    "startDate": "2019-01-01",
+                                    "startTime": "00:00:00",
+                                    "stopType": 0,
+                                    "stopTypeStr": "Graceful",
+                                    "type": "command"
+                                },
+                                {
+                                    "args": [
+                                        "/test",
+                                        "\"hi\""
+                                    ],
+                                    "command": "MQTT",
+                                    "day": 7,
+                                    "dayStr": "Everyday",
+                                    "enabled": 1,
+                                    "endDate": "2026-12-31",
+                                    "endTime": "24:00:00",
+                                    "id": 4,
+                                    "multisyncCommand": false,
+                                    "multisyncHosts": "",
+                                    "playlist": "",
+                                    "repeat": 1,
+                                    "repeatInterval": 0,
+                                    "startDate": "2019-01-01",
+                                    "startTime": "00:00:00",
+                                    "stopType": 0,
+                                    "stopTypeStr": "Graceful",
+                                    "type": "command"
+                                },
+                                {
+                                    "args": [
+                                        "Test2",
+                                        "true",
+                                        "false"
+                                    ],
+                                    "command": "Start Playlist",
+                                    "endTime": 1613365200,
+                                    "endTimeStr": "Mon @ 00:00:00",
+                                    "id": 1,
+                                    "multisyncCommand": false,
+                                    "multisyncHosts": "",
+                                    "priority": 1,
+                                    "startTime": 1613353500,
+                                    "startTimeStr": "Sun @ 20:45:00"
+                                }
+                            ]
                         }
-                    }
-                }
-            }
-        },
-        {
-            "endpoint": "fppd/version",
-            "fppd": true,
-            "methods": {
-                "GET": {
-                    "desc": "Gets the current FPP version",
-                    "output": {
-                        "branch": "master",
-                        "fppdAPI": "v1",
-                        "version": "2.x-292-g83816a39-dirty"
-                    }
-                }
-            }
-        },
-        {
-            "endpoint": "fppd/volume",
-            "fppd": true,
-            "methods": {
-                "GET": {
-                    "desc": "Gets the current output volume",
-                    "output": {
-                        "volume": 72
                     }
                 }
             }
@@ -303,6 +642,63 @@
             }
         },
         {
+            "endpoint": "fppd/testing",
+            "fppd": true,
+            "methods": {
+                "GET": {
+                    "desc": "Gets the current test mode configuration",
+                    "output": {
+                        "Message": "",
+                        "Status": "OK",
+                        "respCode": 200,
+                        "config": {
+                            "enabled": 1,
+                            "channelSet": "1-1048576",
+                            "channelSetType": "channelRange",
+                            "colorPattern": "FF000000FF000000FF",
+                            "cycleMS": 1000,
+                            "mode": "RGBChase",
+                            "subMode": "RGBChase-RGB"
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "endpoint": "fppd/version",
+            "fppd": true,
+            "methods": {
+                "GET": {
+                    "desc": "Gets the current FPP version",
+                    "output": {
+                        "Message": "",
+                        "Status": "OK",
+                        "branch": "master",
+                        "fppdAPI": "v1",
+                        "majorVersion": "4",
+                        "minorVersion": "1000",
+                        "respCode": 200,
+                        "version": "4.x-master-904-ga13db6aa"
+                    }
+                }
+            }
+        },
+        {
+            "endpoint": "fppd/volume",
+            "fppd": true,
+            "methods": {
+                "GET": {
+                    "desc": "Gets the current output volume",
+                    "output": {
+                        "Message": "",
+                        "Status": "OK",
+                        "respCode": 200,
+                        "volume": 70
+                    }
+                }
+            }
+        },
+        {
             "endpoint": "git/originLog",
             "methods": {
                 "GET": {
@@ -318,6 +714,28 @@
                                 "hash": "2fad5ad941baea49edaab834429343b42981bcc5",
                                 "msg": "Move Playlist initialization into main() via Player::Init()"
                             }
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "endpoint": "git/reset",
+            "methods": {
+                "GET": {
+                    "desc": "Performs a hard rest on the current branch, removing any local changes",
+                    "output": {
+                        "status": "OK",
+                        "log": [
+                            "HEAD is now at a1b65d43 Git Reset moved - #944",
+                            "Entering 'external/RF24'",
+                            "HEAD is now at ebc3abe Fix typo, missing space.",
+                            "Entering 'external/rpi-rgb-led-matrix'",
+                            "HEAD is now at 487facb With outline: move one over.",
+                            "Entering 'external/rpi_ws281x'",
+                            "HEAD is now at 3a20f1b Merge pull request #401 from Gadgetoid/patch-readme-spi-pi4",
+                            "Entering 'external/spixels'",
+                            "HEAD is now at 307d46f Support Raspberry Pi 4"
                         ]
                     }
                 }
@@ -670,63 +1088,66 @@
             }
         },
         {
+            "endpoint": "network/dns",
+            "methods": {
+                "GET": {
+                    "desc": "returns informationon DNS configuration. If not configured, status will be 'Not Configured'",
+                    "output": {
+                        "DNS1": "192.168.50.1",
+                        "DNS2": "192.168.1.1",
+                        "status": "OK"
+                    }
+                },
+                "PUT": {
+                    "desc": "Updates the DNS Configuration",
+                    "input": {
+                        "DNS1": "192.168.50.1",
+                        "DNS2": "192.168.1.1"
+                    },
+                    "output": {
+                        "status": "OK",
+                        "DNS": {
+                            "DNS1": "192.168.50.1",
+                            "DNS2": "192.168.1.1"
+                        }
+                    }
+                }
+            }
+        },
+        {
             "endpoint": "network/interface",
             "methods": {
                 "GET": {
-                    "desc": "Returns detailed information about the network interfaces and their IP addresses",
+                    "desc": "Returns detailed information about the network interfaces and their IP addresses as well as wifi strength",
                     "output": [
                         {
-                            "addr_info": [
-                                {
-                                    "family": "inet",
-                                    "label": "lo",
-                                    "local": "127.0.0.1",
-                                    "preferred_life_time": 4294967295,
-                                    "prefixlen": 8,
-                                    "scope": "host",
-                                    "valid_life_time": 4294967295
-                                }
-                            ],
-                            "address": "00:00:00:00:00:00",
-                            "broadcast": "00:00:00:00:00:00",
+                            "ifindex": 1,
+                            "ifname": "lo",
                             "flags": [
                                 "LOOPBACK",
                                 "UP",
                                 "LOWER_UP"
                             ],
-                            "group": "default",
-                            "ifindex": 1,
-                            "ifname": "lo",
-                            "link_type": "loopback",
                             "mtu": 65536,
-                            "operstate": "UNKNOWN",
                             "qdisc": "noqueue",
-                            "txqlen": 1000
-                        },
-                        {
+                            "operstate": "UNKNOWN",
+                            "group": "default",
+                            "txqlen": 1000,
                             "addr_info": [
                                 {
-                                    "broadcast": "192.168.1.255",
-                                    "dynamic": true,
                                     "family": "inet",
-                                    "label": "eth0",
-                                    "local": "192.168.1.149",
-                                    "preferred_life_time": 4679,
-                                    "prefixlen": 24,
-                                    "scope": "global",
-                                    "valid_life_time": 4679
-                                },
-                                {
-                                    "family": "inet6",
-                                    "local": "fe80::c10:82ff:fe9e:91e9",
-                                    "preferred_life_time": 4294967295,
-                                    "prefixlen": 64,
-                                    "scope": "link",
-                                    "valid_life_time": 4294967295
+                                    "local": "127.0.0.1",
+                                    "prefixlen": 8,
+                                    "scope": "host",
+                                    "label": "lo",
+                                    "valid_life_time": 4294967295,
+                                    "preferred_life_time": 4294967295
                                 }
-                            ],
-                            "address": "0e:10:82:9e:91:e9",
-                            "broadcast": "ff:ff:ff:ff:ff:ff",
+                            ]
+                        },
+                        {
+                            "ifindex": 2,
+                            "ifname": "wlan0",
                             "flags": [
                                 "BROADCAST",
                                 "MULTICAST",
@@ -734,14 +1155,85 @@
                                 "UP",
                                 "LOWER_UP"
                             ],
-                            "group": "default",
-                            "ifindex": 2,
-                            "ifname": "eth0",
-                            "link_type": "ether",
                             "mtu": 1500,
+                            "qdisc": "pfifo_fast",
                             "operstate": "UP",
-                            "qdisc": "mq",
-                            "txqlen": 1000
+                            "group": "default",
+                            "txqlen": 1000,
+                            "addr_info": [
+                                {
+                                    "family": "inet",
+                                    "local": "192.168.50.146",
+                                    "prefixlen": 24,
+                                    "broadcast": "192.168.50.255",
+                                    "scope": "global",
+                                    "label": "wlan0",
+                                    "valid_life_time": 4294967295,
+                                    "preferred_life_time": 4294967295
+                                }
+                            ],
+                            "wifi": {
+                                "interface": "wlan0",
+                                "link": 52,
+                                "level": -58,
+                                "noise": -256,
+                                "desc": "good"
+                            }
+                        },
+                        {
+                            "ifindex": 3,
+                            "ifname": "eth0",
+                            "flags": [
+                                "BROADCAST",
+                                "MULTICAST",
+                                "DYNAMIC",
+                                "UP",
+                                "LOWER_UP"
+                            ],
+                            "mtu": 1500,
+                            "qdisc": "pfifo_fast",
+                            "operstate": "UP",
+                            "group": "default",
+                            "txqlen": 1000,
+                            "addr_info": [
+                                {
+                                    "family": "inet",
+                                    "local": "192.168.1.146",
+                                    "prefixlen": 24,
+                                    "broadcast": "192.168.1.255",
+                                    "scope": "global",
+                                    "label": "eth0",
+                                    "valid_life_time": 4294967295,
+                                    "preferred_life_time": 4294967295
+                                }
+                            ]
+                        },
+                        {
+                            "ifindex": 5,
+                            "ifname": "usb0",
+                            "flags": [
+                                "NO-CARRIER",
+                                "BROADCAST",
+                                "MULTICAST",
+                                "UP"
+                            ],
+                            "mtu": 1500,
+                            "qdisc": "pfifo_fast",
+                            "operstate": "DOWN",
+                            "group": "default",
+                            "txqlen": 1000,
+                            "addr_info": [
+                                {
+                                    "family": "inet",
+                                    "local": "192.168.7.2",
+                                    "prefixlen": 24,
+                                    "broadcast": "192.168.7.255",
+                                    "scope": "global",
+                                    "label": "usb0",
+                                    "valid_life_time": 4294967295,
+                                    "preferred_life_time": 4294967295
+                                }
+                            ]
                         }
                     ]
                 }
@@ -766,7 +1258,66 @@
             }
         },
         {
+            "endpoint": "network/wifi/scan/:interface",
+            "methods": {
+                "GET": {
+                    "desc": "Returns informationa about wifi networks that can be discovered via the specified interface. (NOTE: It is possible a network without a SSID will be in the list.) ",
+                    "output": {
+                        "status": "OK",
+                        "networks": [
+                            {
+                                "lastSeen": "0 ms ago",
+                                "freq": 2437,
+                                "signal": "-61.00 dBm",
+                                "SSID": "Christmas"
+                            },
+                            {
+                                "lastSeen": "16930 ms ago",
+                                "freq": 2437,
+                                "signal": "-68.00 dBm",
+                                "SSID": "Christmas-Guest"
+                            },
+                            {
+                                "lastSeen": "16930 ms ago",
+                                "freq": 2412,
+                                "signal": "-93.00 dBm",
+                                "SSID": "MySpectrumWiFi48-2G"
+                            },
+                            {
+                                "lastSeen": "0 ms ago",
+                                "freq": 2437,
+                                "signal": "-55.00 dBm"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        {
             "endpoint": "network/wifi_strength",
+            "methods": {
+                "GET": {
+                    "desc": "DEPRECATED:Use network/wifi/strength",
+                    "deprecated": true,
+                    "output": [
+                        {
+                            "interface": "wlan0",
+                            "link": 45,
+                            "level": -65,
+                            "noise": -256
+                        },
+                        {
+                            "interface": "wlan1",
+                            "link": 40,
+                            "level": -60,
+                            "noise": -256
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "endpoint": "network/wifi/strength",
             "methods": {
                 "GET": {
                     "desc": "Returns detailed information about wireless network interfaces and their signal strength",
@@ -1059,6 +1610,56 @@
             }
         },
         {
+            "endpoint": "scripts",
+            "methods": {
+                "GET": {
+                    "desc": "Return a list of currently installed scripts",
+                    "output": [
+                        "script1.sh",
+                        "script2.sh"
+                    ]
+                }
+            }
+        },
+        {
+            "endpoint": "scripts/installRemote/:category/:filename",
+            "methods": {
+                "GET": {
+                    "desc": "Install a remote script from the script repository",
+                    "output": {
+                        "status": "OK"
+                    }
+                }
+            }
+        },
+        {
+            "endpoint": "scripts/viewRemote/:category/:filename",
+            "methods": {
+                "GET": {
+                    "desc": "View the source code of a remote script",
+                    "output": "The content of the script as a string"
+                }
+            }
+        },
+        {
+            "endpoint": "/scripts/:scriptName",
+            "methods": {
+                "GET": {
+                    "desc": "View the source code of an already installed script",
+                    "output": "The content of the script as a string"
+                }
+            }
+        },
+        {
+            "endpoint": "/scripts/:scriptName/run",
+            "methods": {
+                "GET": {
+                    "desc": "Run a locally installed Script",
+                    "output": "The output of the script as a String"
+                }
+            }
+        },
+        {
             "endpoint": "sequence",
             "methods": {
                 "GET": {
@@ -1160,7 +1761,7 @@
             "endpoint": "settings/:SettingName",
             "methods": {
                 "GET": {
-                    "desc": "Get info about a for a particular setting.",
+                    "desc": "Get info about a for a particular setting include the value.",
                     "output": {
                         "name": "AudioFormat",
                         "description": "Audio Output Format",
@@ -1183,6 +1784,13 @@
                         },
                         "value": "0"
                     }
+                },
+                "PUT": {
+                    "desc": "Sets the value for a specifc setting",
+                    "input": "0",
+                    "output": {
+                        "status": "OK"
+                    }
                 }
             }
         },
@@ -1200,10 +1808,232 @@
             }
         },
         {
+            "endpoint": "system/fppd/restart",
+            "methods": {
+                "GET": {
+                    "desc": "Restarts the fppd process. Can also pass ?quick=1 to reload some configuration without full restart",
+                    "output": {
+                        "status": "OK"
+                    }
+                }
+            }
+        },
+        {
+            "endpoint": "system/fppd/start",
+            "methods": {
+                "GET": {
+                    "desc": "Starts the fppd process (if it isn't already running)",
+                    "output": {
+                        "status": "OK"
+                    }
+                }
+            }
+        },
+        {
+            "endpoint": "system/fppd/stop",
+            "methods": {
+                "GET": {
+                    "desc": "Stops the fppd process if it is running",
+                    "output": {
+                        "status": "OK"
+                    }
+                }
+            }
+        },
+        {
             "endpoint": "system/reboot",
             "methods": {
                 "GET": {
                     "desc": "Results in reboot of the operating system",
+                    "output": {
+                        "status": "OK"
+                    }
+                }
+            }
+        },
+        {
+            "endpoint": "system/shutdown",
+            "methods": {
+                "GET": {
+                    "desc": "Execute a clean shutdown of the Linux operating system.",
+                    "output": {
+                        "status": "OK"
+                    }
+                }
+            }
+        },
+        {
+            "endpoint": "system/status",
+            "methods": {
+                "GET": {
+                    "desc": "Gives a fppd, network, current playlist, schedule, utalization, host, version, and mqtt information.  Can also pass an optional array of ip addresses like &ip[]=192.168.0.1&ip[]=192.168.0.2 to get information on a remote.",
+                    "output": {
+                        "MQTT": {
+                            "configured": true,
+                            "connected": true
+                        },
+                        "current_playlist": {
+                            "count": "4",
+                            "description": "Full Test 1",
+                            "index": "2",
+                            "playlist": "Test1",
+                            "type": "pause"
+                        },
+                        "current_sequence": "",
+                        "current_song": "",
+                        "fppd": "running",
+                        "mode": 2,
+                        "mode_name": "player",
+                        "next_playlist": {
+                            "playlist": "Test3",
+                            "start_time": "Sun @ 17:00:00 - (Everyday)"
+                        },
+                        "repeat_mode": 1,
+                        "scheduler": {
+                            "currentPlaylist": {
+                                "actualEndTime": 1613365200,
+                                "actualEndTimeStr": "Mon @ 00:00:00",
+                                "actualStartTime": 1613314804,
+                                "actualStartTimeStr": "Sun @ 10:00:04",
+                                "currentTime": 1613314842,
+                                "currentTimeStr": "Wed @ 19:00:00",
+                                "playlistName": "Test1",
+                                "scheduledEndTime": 1613365200,
+                                "scheduledEndTimeStr": "Mon @ 00:00:00",
+                                "scheduledStartTime": 1613278800,
+                                "scheduledStartTimeStr": "Sun @ 00:00:00",
+                                "secondsRemaining": 50358,
+                                "stopType": 0,
+                                "stopTypeStr": "Graceful"
+                            },
+                            "enabled": 1,
+                            "nextPlaylist": {
+                                "playlistName": "Test3",
+                                "scheduledStartTime": 0,
+                                "scheduledStartTimeStr": "Sun @ 17:00:00 - (Everyday)"
+                            },
+                            "status": "playing"
+                        },
+                        "seconds_elapsed": "5",
+                        "seconds_played": "5",
+                        "seconds_remaining": "7",
+                        "status": 1,
+                        "status_name": "playing",
+                        "time": "Sun Feb 14 10:00:42 EST 2021",
+                        "time_elapsed": "00:05",
+                        "time_remaining": "00:07",
+                        "uptime": "00:38",
+                        "uptimeDays": 0.0004398148148148148,
+                        "uptimeHours": 0.010555555555555556,
+                        "uptimeMinutes": 0.6333333333333333,
+                        "uptimeSeconds": 38,
+                        "uptimeStr": "0 days, 0 hours, 0 minutes, 38 seconds",
+                        "uptimeTotalSeconds": 38,
+                        "volume": 70,
+                        "wifi": [],
+                        "interfaces": [
+                            {
+                                "ifindex": 1,
+                                "ifname": "lo",
+                                "flags": [
+                                    "LOOPBACK",
+                                    "UP",
+                                    "LOWER_UP"
+                                ],
+                                "mtu": 65536,
+                                "qdisc": "noqueue",
+                                "operstate": "UNKNOWN",
+                                "group": "default",
+                                "txqlen": 1000,
+                                "addr_info": [
+                                    {
+                                        "family": "inet",
+                                        "local": "127.0.0.1",
+                                        "prefixlen": 8,
+                                        "scope": "host",
+                                        "label": "lo",
+                                        "valid_life_time": 4294967295,
+                                        "preferred_life_time": 4294967295
+                                    }
+                                ]
+                            },
+                            {
+                                "ifindex": 2,
+                                "ifname": "eth0",
+                                "flags": [
+                                    "BROADCAST",
+                                    "MULTICAST",
+                                    "DYNAMIC",
+                                    "UP",
+                                    "LOWER_UP"
+                                ],
+                                "mtu": 1500,
+                                "qdisc": "mq",
+                                "operstate": "UP",
+                                "group": "default",
+                                "txqlen": 1000,
+                                "addr_info": [
+                                    {
+                                        "family": "inet",
+                                        "local": "192.168.1.149",
+                                        "prefixlen": 24,
+                                        "broadcast": "192.168.1.255",
+                                        "scope": "global",
+                                        "dynamic": true,
+                                        "label": "eth0",
+                                        "valid_life_time": 7096,
+                                        "preferred_life_time": 7096
+                                    }
+                                ]
+                            }
+                        ],
+                        "advancedView": {
+                            "HostName": "FPPdev",
+                            "HostDescription": "",
+                            "Platform": "Debian",
+                            "Variant": "Debian",
+                            "Mode": "player",
+                            "Version": "4.x-master-914-gebda8520",
+                            "Branch": "master",
+                            "OSVersion": "v3.0",
+                            "OSRelease": "Debian GNU/Linux 10 (buster)",
+                            "channelRanges": "0-103",
+                            "majorVersion": 4,
+                            "minorVersion": 1000,
+                            "typeId": 1,
+                            "Utilization": {
+                                "CPU": 1.8711392041373358,
+                                "Memory": 16.75084348563166,
+                                "Uptime": "6 days"
+                            },
+                            "Kernel": "4.19.0-6-amd64",
+                            "LocalGitVersion": "6e043d6",
+                            "RemoteGitVersion": "6e043d6",
+                            "UpgradeSource": "github.com",
+                            "IPs": [
+                                "192.168.1.149"
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "endpoint": "system/volume",
+            "methods": {
+                "GET": {
+                    "desc": "Returns the Current volume if FPPD is running or the Volume Setting if not",
+                    "output": {
+                        "status": "OK",
+                        "method": "FPPD",
+                        "volume": 70
+                    }
+                },
+                "POST": {
+                    "desc": "Sets the volume.  The volume should be passed as a JSON message.",
+                    "input": {
+                        "volume": 34
+                    },
                     "output": {
                         "status": "OK"
                     }
