@@ -2,10 +2,9 @@
 
 <?
 $skipJSsettings = 1;
-require_once '../www/config.php';
+require_once '/opt/fpp/www/config.php';
 
 //////////// MAIN ////////////
-$pauseAmount = 0; // Number of seconds to pause between activites
 $tasks = array(
     "uuid" => 'getUUID',
     "systemInfo" => 'getSystemInfo',
@@ -20,7 +19,6 @@ $tasks = array(
 );
 
 foreach ($tasks as $key => $fun) {
-    sleep($pauseAmount);
     try {
         $obj[$key] = call_user_func($fun);
     } catch (exception $e) {
@@ -177,8 +175,19 @@ function getModels()
 
 function getPlugins()
 {
+    global $settings;
     $data = json_decode(file_get_contents("http://localhost/api/plugin"), true);
-    return $data;
+    $rc = array();
+    if (is_array($data)) {
+        foreach ($data as $plugin) {
+            $output = '';
+            $cmd = '(cd ' . $settings['pluginDirectory'] . '/' . $plugin . ' && git log -1 --format="%H^%cd")';
+            exec($cmd, $output);
+            $parts = explode("^", $output[0]);
+            $rc[$plugin] = array("hash" => $parts[0], "commitDate" => $parts[1]);
+        }
+    }
+    return $rc;
 
 }
 
@@ -207,17 +216,14 @@ function getSettings()
 {
     global $settings;
     $rc = array();
-    //TODO: Add a new tag to settings.json of which seetings to keep
-    $safeSettings = array(
-        "BridgeInputDelayBeforeBlack" => "BridgeInputDelayBeforeBlack",
-        "uiLevel" => "uiLevel",
-        "emailenable" => "emailenable",
-        "AudioFormat" => "AudioFormat",
-        "AudioOutput" => "AudioOutput",
-        "CompressMultiSyncTransfers" => "CompressMultiSyncTransfers"
-    );
+    $safeSettings = array();
+    $allSettings = json_decode(file_get_contents($settings['wwwDir'] . "/settings.json"), true);
+    foreach ($allSettings['settings'] as $name => $config) {
+        if (isset($config['gatherStats']) && $config['gatherStats']) {
+            $safeSettings[$name] = $name;
+        }
+    }
     validateAndAdd($rc, $settings, $safeSettings);
-
 
     return $rc;
 }
