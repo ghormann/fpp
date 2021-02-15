@@ -1,34 +1,65 @@
-#!/usr/bin/php
+<?php
 
-<?
-$skipJSsettings = 1;
-require_once '/opt/fpp/www/config.php';
 
-//////////// MAIN ////////////
-$tasks = array(
-    "uuid" => 'getUUID',
-    "systemInfo" => 'getSystemInfo',
-    "capeInfo" => 'getCapeInfo',
-    "outputProcessors" => 'getOutputProcessors',
-    "files" => 'getFiles',
-    "models" => 'getModels',
-    "multisync" => 'getMultiSync',
-    "plugins" => 'getPlugins',
-    "schedule" => 'getSchedule',
-    "settings" => 'getSettings',
-);
-
-foreach ($tasks as $key => $fun) {
-    try {
-        $obj[$key] = call_user_func($fun);
-    } catch (exception $e) {
-        echo ("Call to $t failed");
+// GET /api/statistics
+function stats_get_last_file()
+{
+    $statsFile = stats_get_filename();
+    if (file_exists($statsFile)) {
+        // No reason to regenereate if less than 2 hours old
+        if (time() - filemtime($statsFile) > 2 * 3600) {
+            stats_genereate($statsFile);
+        }
+    } else {
+        stats_genereate($statsFile);
     }
-}
-$json = json_encode($obj, JSON_PRETTY_PRINT);
-echo ("$json\n");
 
-//////////// End Main ////////////
+    return json(json_decode(file_get_contents($statsFile)));
+}
+
+// DELETE /api/statistics
+function stats_delete_last_file() {
+    $statsFile = stats_get_filename();
+    if (file_exists($statsFile)) {
+        unlink($statsFile);
+    }
+    return json(array("status" => "OK"));
+}
+
+function stats_get_filename() {
+    return "/tmp/fpp_stats.json";
+}
+
+function stats_genereate($statsFile)
+{
+//////////// MAIN ////////////
+    $tasks = array(
+        "uuid" => 'stats_getUUID',
+        "systemInfo" => 'stats_getSystemInfo',
+        "capeInfo" => 'stats_getCapeInfo',
+        "outputProcessors" => 'stats_getOutputProcessors',
+        "files" => 'stats_getFiles',
+        "models" => 'stats_getModels',
+        "multisync" => 'stats_getMultiSync',
+        "plugins" => 'stats_getPlugins',
+        "schedule" => 'stats_getSchedule',
+        "settings" => 'stats_getSettings',
+    );
+
+    foreach ($tasks as $key => $fun) {
+        try {
+            $obj[$key] = call_user_func($fun);
+        } catch (exception $e) {
+            echo ("Call to $t failed");
+        }
+    }
+    if (file_exists($statsFile)) {
+        unlink($statsFile);
+    }
+
+    $data = json_encode($obj, JSON_PRETTY_PRINT);
+    file_put_contents($statsFile, $data);
+}
 
 function validateAndAdd(&$obj, &$input, &$mapping)
 {
@@ -39,7 +70,7 @@ function validateAndAdd(&$obj, &$input, &$mapping)
     }
 }
 
-function getSystemInfo()
+function stats_getSystemInfo()
 {
     $rc = array();
     $data = json_decode(file_get_contents("http://localhost/api/system/status"), true);
@@ -74,7 +105,7 @@ function getSystemInfo()
     return $rc;
 }
 
-function getOutputProcessors()
+function stats_getOutputProcessors()
 {
     $rc = array();
     $data = json_decode(file_get_contents("http://localhost/api/channel/output/processors"), true);
@@ -94,7 +125,7 @@ function getOutputProcessors()
     return $rc;
 }
 
-function getFiles()
+function stats_getFiles()
 {
     $types = array("sequences", "effects", "music", "videos");
     $rc = array();
@@ -113,7 +144,7 @@ function getFiles()
     return $rc;
 }
 
-function getMultiSync()
+function stats_getMultiSync()
 {
     $mapping = array(
         "fppModeString" => "fppModeString",
@@ -138,7 +169,7 @@ function getMultiSync()
     return $rc;
 }
 
-function getSchedule()
+function stats_getSchedule()
 {
     $data = json_decode(file_get_contents("http://localhost/api/fppd/schedule"), true);
     $rc = array();
@@ -162,7 +193,7 @@ function getSchedule()
     return $rc;
 }
 
-function getModels()
+function stats_getModels()
 {
     $data = json_decode(file_get_contents("http://localhost/api/models"), true);
     $rc = array("count" => 0);
@@ -173,7 +204,7 @@ function getModels()
     return $rc;
 }
 
-function getPlugins()
+function stats_getPlugins()
 {
     global $settings;
     $data = json_decode(file_get_contents("http://localhost/api/plugin"), true);
@@ -191,7 +222,7 @@ function getPlugins()
 
 }
 
-function getUUID()
+function stats_getUUID()
 {
     $output = array();
     exec("/opt/fpp/scripts/get_uuid", $output);
@@ -199,7 +230,7 @@ function getUUID()
     return $output[0];
 }
 
-function getCapeInfo()
+function stats_getCapeInfo()
 {
     $rc = array("type" => "None");
     $data = json_decode(file_get_contents("http://localhost/api/cape"), true);
@@ -212,7 +243,7 @@ function getCapeInfo()
     return $rc;
 }
 
-function getSettings()
+function stats_getSettings()
 {
     global $settings;
     $rc = array();
@@ -227,5 +258,3 @@ function getSettings()
 
     return $rc;
 }
-
-?>
