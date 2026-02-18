@@ -178,8 +178,9 @@ static std::vector<PiGPIODCapabilities> PI_PINS;
 
 void PiGPIOPinProvider::Init() {
     std::string ipOrNo = isPi5() ? "no" : "ip";
-    PI_PINS.push_back(PiGPIODCapabilities("P1-3", 2).setResetMode("a3"));
-    PI_PINS.push_back(PiGPIODCapabilities("P1-5", 3).setResetMode("a3"));
+    std::string i2c = isPi5() ? "a3" : "a0";
+    PI_PINS.push_back(PiGPIODCapabilities("P1-3", 2).setResetMode(i2c));
+    PI_PINS.push_back(PiGPIODCapabilities("P1-5", 3).setResetMode(i2c));
     PI_PINS.push_back(PiGPIODCapabilities("P1-7", 4));
     PI_PINS.push_back(PiGPIODCapabilities("P1-8", 14));
     PI_PINS.push_back(PiGPIODCapabilities("P1-10", 15));

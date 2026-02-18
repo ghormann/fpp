@@ -474,53 +474,51 @@ void PinCapabilities::InitGPIO(const std::string& process, PinCapabilitiesProvid
     }
     PIN_PROVIDER = p;
 #ifdef HASGPIOD
-    int chipCount = 0;
-    int pinCount = 0;
-#ifdef IS_GPIOD_CXX_V2
-    LogDebug(VB_GPIO, "Using libgpiod C++ API v2\n");
-#else
-    LogDebug(VB_GPIO, "Using libgpiod C++ API v1\n");
-#endif
     try {
         if (GPIOD_PINS.empty()) {
             // has at least one chip
             std::set<std::string> found;
 #ifdef IS_GPIOD_CXX_V2
+            LogDebug(VB_GPIO, "Using libgpiod C++ API v2\n");
+            std::set<std::string> foundChips;
             for (const auto& entry : std::filesystem::directory_iterator("/dev/")) {
                 if (startsWith(entry.path().filename().string(), "gpiochip")) {
-                    auto chip = gpiod::chip(entry.path().string());
-                    auto info = chip.get_info();
-                    std::string chipDevice = entry.path().filename().string();
-                    std::string label = info.label();
-                    int chipNum = std::stoi(chipDevice.substr(8));
+                    foundChips.insert(entry.path().filename().string());
+                }
+            }
+            for (auto &chipName : foundChips) {
+                auto chip = gpiod::chip("/dev/" + chipName);
+                auto info = chip.get_info();
+                std::string chipDevice = chipName;
+                std::string label = info.label();
+                int chipNum = std::stoi(chipDevice.substr(8));
 
-                    if (PLATFORM_IGNORES.find(label) == PLATFORM_IGNORES.end()) {
-                        char ci = 'b';
-                        while (found.find(label) != found.end()) {
-                            label = chip.get_info().label() + ci;
-                            ci++;
-                        }
-                        found.insert(label);
-                        int num_lines = chip.get_info().num_lines();
-                        LogDebug(VB_GPIO, "Registering chip %s (/dev/%s) as chipIdx=%d with %d lines\n",
-                                 label.c_str(), chipDevice.c_str(), chipCount, num_lines);
-                        for (int x = 0; x < num_lines; x++) {
-                            std::string n = label + "-" + std::to_string(x);
-                            auto line = chip.get_line_info(x);
-                            std::string plabel = line.name();
-                            if (plabel.empty()) {
-                                plabel = n;
-                            }
-                            GPIOD_PINS.push_back(GPIODCapabilities(plabel, pinCount + x, chipDevice).setGPIO(chipCount, x));
-                        }
+                if (PLATFORM_IGNORES.find(label) == PLATFORM_IGNORES.end()) {
+                    char ci = 'b';
+                    while (found.find(label) != found.end()) {
+                        label = chip.get_info().label() + ci;
+                        ci++;
                     }
-                    pinCount += chip.get_info().num_lines();
-                    chipCount++;
+                    found.insert(label);
+                    int num_lines = chip.get_info().num_lines();
+                    LogDebug(VB_GPIO, "Registering chip %s (/dev/%s) as chipIdx=%d with %d lines\n",
+                                label.c_str(), chipDevice.c_str(), chipNum, num_lines);
+                    for (int x = 0; x < num_lines; x++) {
+                        std::string n = label + "-" + std::to_string(x);
+                        auto line = chip.get_line_info(x);
+                        std::string plabel = line.name();
+                        if (plabel.empty()) {
+                            plabel = n;
+                        }
+                        GPIOD_PINS.push_back(GPIODCapabilities(plabel, x, chipDevice).setGPIO(chipNum, x));
+                    }
                 }
             }
 #else
+            LogDebug(VB_GPIO, "Using libgpiod C++ API v1\n");
             ::gpiod_chip* chip = gpiod_chip_open_by_number(0);
             if (chip != nullptr) {
+                int chipCount = 0;
                 ::gpiod_chip_close(chip);
                 if (GPIOD_PINS.empty()) {
                     // has at least one chip
@@ -542,10 +540,9 @@ void PinCapabilities::InitGPIO(const std::string& process, PinCapabilitiesProvid
                                 if (plabel.empty()) {
                                     plabel = n;
                                 }
-                                GPIOD_PINS.push_back(GPIODCapabilities(plabel, pinCount + x, name).setGPIO(chipCount, x));
+                                GPIOD_PINS.push_back(GPIODCapabilities(plabel, x, name).setGPIO(chipCount, x));
                             }
                         }
-                        pinCount += a.num_lines();
                         chipCount++;
                     }
                 }
