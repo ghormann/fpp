@@ -41,6 +41,9 @@ uint8_t* PixelCountPixelStringTester::createTestData(PixelString* ps, int cycleC
             curPixel = 1;
         }
         if (vs.receiverNum == -1) {
+            for (int x = 0; x < vs.startNulls * vs.channelsPerNode(); ++x) {
+                *out++ = 0;
+            }
             for (int x = 0; x < vs.pixelCount; ++x) {
                 if (curPixel == 50) {
                     uint8_t brightness = vs.brightnessMap[255];
@@ -72,6 +75,9 @@ uint8_t* PixelCountPixelStringTester::createTestData(PixelString* ps, int cycleC
                     }
                     ++curPixel;
                 }
+            }
+            for (int x = 0; x < vs.endNulls * vs.channelsPerNode(); ++x) {
+                *out++ = 0;
             }
         } else {
             fillInSmartReceiver(ps, vs, inChannelData, inCh, out);

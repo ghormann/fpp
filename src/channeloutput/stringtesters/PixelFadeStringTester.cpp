@@ -47,6 +47,7 @@ uint8_t* PixelFadeStringTester::createTestData(PixelString* ps, int cycleCount, 
                 offset = vs.colorOrder.whiteOffset();
                 break;
             }
+            out += vs.startNulls * vs.channelsPerNode();
             for (int x = 0; x < vs.pixelCount; ++x) {
                 if (offset == -1) {
                     for (int y = 0; y < vs.channelsPerNode(); ++y) {
@@ -60,6 +61,7 @@ uint8_t* PixelFadeStringTester::createTestData(PixelString* ps, int cycleCount, 
                     inCh += vs.channelsPerNode();
                 }
             }
+            out += vs.endNulls * vs.channelsPerNode();
         } else {
             fillInSmartReceiver(ps, vs, inChannelData, inCh, out);
         }

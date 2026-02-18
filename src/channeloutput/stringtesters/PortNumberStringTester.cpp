@@ -38,6 +38,9 @@ uint8_t* OutputPortNumberPixelStringTester::createTestData(PixelString* ps, int 
     int curPixel = 0;
     for (auto& vs : ps->m_virtualStrings) {
         if (vs.receiverNum == -1) {
+            for (int x = 0; x < vs.startNulls * vs.channelsPerNode(); ++x) {
+                *out++ = 0;
+            }
             for (int x = 0; x < vs.pixelCount; ++x) {
                 if (curPixel <= ps->m_portNumber) {
                     uint8_t brightness = vs.brightnessMap[255];
@@ -60,6 +63,9 @@ uint8_t* OutputPortNumberPixelStringTester::createTestData(PixelString* ps, int 
                     inCh += vs.channelsPerNode();
                 }
                 ++curPixel;
+            }
+            for (int x = 0; x < vs.endNulls * vs.channelsPerNode(); ++x) {
+                *out++ = 0;
             }
         } else {
             fillInSmartReceiver(ps, vs, inChannelData, inCh, out);
