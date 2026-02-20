@@ -117,7 +117,17 @@ if (preg_match('/^https?:/', $_GET['os'])) {
     */
 }
 
-if ($applyUpdate) {
+$full_fppos_path = "/home/fpp/media/upload/$baseFile";
+
+if (!file_exists($full_fppos_path)) {
+    echo ("File does not exist, aborting: $full_fppos_path\n");
+    $applyUpdate = false;
+} else if (filesize($full_fppos_path) == 0) {
+    echo ("File is empty, aborting: $full_fppos_path\n");
+    $applyUpdate = false;
+}
+
+if ($applyUpdate) {    
     echo "==========================================================================\n";
     echo "Upgrading OS:\n";
 
