@@ -77,18 +77,17 @@
                             <div style="overflow: hidden; padding: 10px;">
 
                                 <?
-                        }
-                        //Loop through commands in grp
-                        echo "<div id=\"troubleshooting-results-" . $commandGrpID . "\">";
-                        foreach ($commandGrp["commands"] as $commandKey => $commandID) {
-                            //Display command if relevant for current platform
-                            if (count(array_intersect($commandID["platforms"], $target_platforms)) > 0) {
-                                $commandTitle = $commandID["title"];
-                                $commandCmd = $commandID["cmd"];
-                                $commandDesc = $commandID["description"];
-                                $header = "header_" . $commandKey;
-                                ${'hotlinks-' . $commandGrpID} .= "<div class=\"col-md-3\"><a href=\"#$header\">$commandTitle</a></div>";
-                                ?>
+                                //Loop through commands in grp
+                                echo "<div id=\"troubleshooting-results-" . $commandGrpID . "\">";
+                                foreach ($commandGrp["commands"] as $commandKey => $commandID) {
+                                    //Display command if relevant for current platform
+                                    if (count(array_intersect($commandID["platforms"], $target_platforms)) > 0) {
+                                        $commandTitle = $commandID["title"];
+                                        $commandCmd = $commandID["cmd"];
+                                        $commandDesc = $commandID["description"];
+                                        $header = "header_" . $commandKey;
+                                        ${'hotlinks-' . $commandGrpID} .= "<div class=\"col-md-3\"><a href=\"#$header\">$commandTitle</a></div>";
+                                        ?>
 
                                     <a class="troubleshoot-anchor" name="<? echo $header ?>">.</a>
                                     <h3><? echo $commandTitle; ?></h3>
@@ -98,14 +97,16 @@
                                             id="<? echo ("command_" . $commandKey) ?>"><img src="./images/loading_spinner.gif" width="100" height="100"><i>Loading...</i></pre>
                                         <hr>
                                         <?
-                            }
-                        }
-                        ${'hotlinks-' . $commandGrpID} .= "</div></div>";
-                        ?>
+                                    }
+                                }
+                                ${'hotlinks-' . $commandGrpID} .= "</div></div>";
+                                ?>
                         </div>
                     </div>
                 </div>
                 <?
+
+                        }
 
                     }
 
