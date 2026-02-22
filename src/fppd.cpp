@@ -70,7 +70,6 @@
 #include "command.h"
 #include "e131bridge.h"
 #include "effects.h"
-#include "falcon.h"
 #include "fppversion.h"
 #include "gpio.h"
 #include "httpAPI.h"
@@ -517,15 +516,13 @@ int parseArguments(int argc, char** argv) {
             { "log-file", required_argument, 0, 'l' },
             { "playlist", required_argument, 0, 'p' },
             { "position", required_argument, 0, 'P' },
-            { "detect-hardware", no_argument, 0, 'H' },
             { "detect-piface", no_argument, 0, 4 },
-            { "configure-hardware", no_argument, 0, 'C' },
             { "help", no_argument, 0, 'h' },
             { "log-level", required_argument, 0, 2 },
             { 0, 0, 0, 0 }
         };
 
-        c = getopt_long(argc, argv, "Vfdrv:m:l:p:P:HCh",
+        c = getopt_long(argc, argv, "Vfdrv:m:l:p:P:h",
                         long_options, &option_index);
         if (c == -1)
             break;
@@ -563,16 +560,6 @@ int parseArguments(int argc, char** argv) {
             break;
         case 'l': // log-file
             SetSetting("logFile", optarg);
-            break;
-        case 'H': // Detect Falcon hardware
-        case 'C': // Configure Falcon hardware
-            PinCapabilities::InitGPIO("FPPD", new PLAT_GPIO_CLASS());
-            SetLogFile("");
-            FPPLogger::INSTANCE.Settings.level = LOG_DEBUG;
-            if (DetectFalconHardware((c == 'C') ? 1 : 0))
-                exit(1);
-            else
-                exit(0);
             break;
         case 'h': // help
             usage(argv[0]);

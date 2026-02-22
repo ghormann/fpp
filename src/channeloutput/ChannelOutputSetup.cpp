@@ -38,9 +38,6 @@
 #include "../config.h"
 #include "../MultiSync.h"
 
-// old style that still need porting
-#include "FPD.h"
-
 #include "processors/OutputProcessor.h"
 
 /////////////////////////////////////////////////////////////////////////////
@@ -52,9 +49,7 @@ public:
 
     unsigned int startChannel = 0;
     unsigned int channelCount = 0;
-    FPPChannelOutput* outputOld = nullptr;
     ChannelOutput* output = nullptr;
-    void* privData = nullptr;
     std::string sourceFile;
 
     std::atomic<FPPChannelOutputInstance*> prev;
@@ -194,12 +189,6 @@ static void ComputeOutputRanges() {
                 LogInfo(VB_CHANNELOUT, "%s: Determined range needed %d - %d\n", co->output->GetOutputType().c_str(), m1, m2);
                 addRange(m1, m2, precise, normal);
             });
-        } else if (co->outputOld) {
-            // old style outputs
-            int m1 = co->startChannel;
-            int m2 = m1 + co->channelCount - 1;
-            LogInfo(VB_CHANNELOUT, "ChannelOutput:  Determined range needed %d - %d\n", m1, m2);
-            addRange(m1, m2, precise, normal);
         }
         co = co->next;
     }
@@ -328,19 +317,13 @@ static bool ReloadChannelOutputsForFile(const std::string& cfgFile) {
         // delete the outputs while the thread is running as it may be using them
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         for (auto inst : toDelete) {
-            if ((inst->outputOld) &&
-                (inst->outputOld->stopThread)) {
-                inst->outputOld->stopThread(inst->privData);
-            } else if (inst->output) {
+            if (inst->output) {
                 inst->output->StoppingOutput();
             }
         }
     }
     for (auto inst : toDelete) {
-        if (inst->outputOld) {
-            inst->outputOld->close(inst->privData);
-            free(inst->privData);
-        } else if (inst->output) {
+        if (inst->output) {
             inst->output->Close();
             delete inst->output;
         }
@@ -449,22 +432,6 @@ int InitializeChannelOutputs(void) {
     Json::Value root;
 
     channelOutputFrame = 0;
-
-    if (FPDOutput.isConfigured()) {
-        FPPChannelOutputInstance* inst = new FPPChannelOutputInstance();
-        inst->startChannel = getSettingInt("FPDStartChannelOffset");
-        inst->outputOld = &FPDOutput;
-        inst->sourceFile = "FPD";
-
-        if (FPDOutput.open("", &inst->privData)) {
-            inst->channelCount = inst->outputOld->maxChannels(inst->privData);
-            addChannelOutput(inst);
-            LogDebug(VB_CHANNELOUT, "Configured FPD Channel Output\n");
-        } else {
-            delete inst;
-            LogErr(VB_CHANNELOUT, "ERROR Opening FPD Channel Output\n");
-        }
-    }
 
     // FIXME, build this list dynamically
     const char* configFiles[] = {
@@ -594,12 +561,7 @@ int SendChannelData(const char* channelData) {
 
     for (auto inst = channelOutputs.load(); inst != nullptr; inst = inst->next) {
         auto output = inst->output;
-        if (inst->outputOld) {
-            inst->outputOld->send(
-                inst->privData,
-                channelData + inst->startChannel,
-                inst->channelCount < (FPPD_MAX_CHANNELS - inst->startChannel) ? inst->channelCount : (FPPD_MAX_CHANNELS - inst->startChannel));
-        } else if (output) {
+        if (output) {
             output->SendData((unsigned char*)(channelData + inst->startChannel));
         }
     }
@@ -613,17 +575,9 @@ int SendChannelData(const char* channelData) {
 void StartingOutput(void) {
     OutputMonitor::INSTANCE.AutoEnableOutputs();
 
-    FPPChannelOutputInstance* output;
-    int i = 0;
-
     for (auto inst = channelOutputs.load(); inst != nullptr; inst = inst->next) {
-        auto output = inst->output;
-        if ((inst->outputOld) &&
-            (inst->outputOld->startThread)) {
-            // old style outputs
-            inst->outputOld->startThread(inst->privData);
-        } else if (output) {
-            output->StartingOutput();
+        if (inst->output) {
+            inst->output->StartingOutput();
         }
     }
 }
@@ -632,16 +586,9 @@ void StartingOutput(void) {
  *
  */
 void StoppingOutput(void) {
-    FPPChannelOutputInstance* output;
-    int i = 0;
-
     for (auto inst = channelOutputs.load(); inst != nullptr; inst = inst->next) {
-        auto output = inst->output;
-        if ((inst->outputOld) &&
-            (inst->outputOld->stopThread)) {
-            inst->outputOld->stopThread(inst->privData);
-        } else if (output) {
-            output->StoppingOutput();
+        if (inst->output) {
+            inst->output->StoppingOutput();
         }
     }
     OutputMonitor::INSTANCE.AutoDisableOutputs();
@@ -652,19 +599,12 @@ void StoppingOutput(void) {
  */
 void CloseChannelOutputs(void) {
     for (auto inst = channelOutputs.load(); inst != nullptr; inst = inst->next) {
-        auto output = inst->output;
-        if (inst->outputOld) {
-            inst->outputOld->close(inst->privData);
-        } else if (output) {
-            output->Close();
+        if (inst->output) {
+            inst->output->Close();
         }
     }
     for (auto inst = channelOutputs.load(); inst != nullptr; inst = inst->next) {
         auto output = inst->output;
-        if (inst->privData) {
-            free(inst->privData);
-            inst->privData = nullptr;
-        }
         if (output) {
             inst->output = nullptr;
             delete output;

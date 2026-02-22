@@ -130,12 +130,8 @@
     }
     if (!isset($currentCapeInfo['provides'])) {
         $currentCapeInfo['provides'][] = "all";
-        if (isset($settings['FalconHardwareDetected']) && ($settings['FalconHardwareDetected'] == 1)) {
-            $currentCapeInfo['provides'][] = "fpd";
-        }
     } else if (isset($settings["showAllOptions"]) && $settings["showAllOptions"] == 1) {
         $currentCapeInfo['provides'][] = "all";
-        $currentCapeInfo['provides'][] = "fpd";
     } else if ($uiLevel >= 2) {
         $currentCapeInfo['provides'][] = "all";
     } else if ($uiLevel == 1) {
@@ -465,18 +461,6 @@
                             </li>
                             <?
                         }
-                        if ($settings['Platform'] == "Raspberry Pi") {
-                            if (in_array('fpd', $currentCapeInfo["provides"])) {
-                                ?>
-                                <li class="nav-item">
-                                    <a class="nav-link" id="tab-fpd-tab" type="button" tabType='FPD' data-bs-toggle="pill"
-                                        data-bs-target='#tab-fpd' role="tab" aria-controls="tab-fpd">
-                                        Falcon Pixelnet/DMX
-                                    </a>
-                                </li>
-                                <?
-                            }
-                        }
                         if (in_array('pwm', $currentCapeInfo["provides"]) && isset($currentCapeInfo['verifiedKeyId'])) {
                             $pwmTabText = "PWM";
                             if (isset($currentCapeInfo["labels"]) && isset($currentCapeInfo["labels"]["pwm"])) {
@@ -549,15 +533,6 @@
                                 <? include_once 'co-pixelStrings.php'; ?>
                             </div>
                             <?
-                        }
-                        if ($settings['Platform'] == "Raspberry Pi") {
-                            if (in_array('fpd', $currentCapeInfo["provides"])) {
-                                ?>
-                                <div class="tab-pane fade" id="tab-fpd" role="tabpanel" aria-labelledby="tab-fpd-tab">
-                                    <? include_once 'co-fpd.php'; ?>
-                                </div>
-                                <?
-                            }
                         }
                         if (in_array('pwm', $currentCapeInfo["provides"])) {
                             ?>

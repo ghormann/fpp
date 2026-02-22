@@ -3820,71 +3820,6 @@ function getUniverses (reload, input) {
 	});
 }
 
-function getPixelnetDMXoutputs () {
-	$.get('api/channel/output/PixelnetDMX')
-		.done(function (data) {
-			var innerHTML = '';
-			if (data.length > 0) {
-				innerHTML =
-					'<tr>' +
-					'<th>#</th>' +
-					'<th>Active</th>' +
-					'<th>Type</th>' +
-					'<th>Start</th>' +
-					'</tr>';
-
-				for (var i = 0; i < data.length; i++) {
-					var active = data[i].active;
-					var type = data[i].type;
-					var startAddress = data[i].startAddress;
-
-					var activeChecked = active == 1 ? 'checked="checked"' : '';
-					var pixelnetChecked = type == 0 ? 'selected' : '';
-					var dmxChecked = type == 1 ? 'selected' : '';
-
-					innerHTML +=
-						'<tr class="rowUniverseDetails">' +
-						'<td>' +
-						(i + 1).toString() +
-						'</td>' +
-						'<td><input name="FPDchkActive[' +
-						i.toString() +
-						']" id="FPDchkActive[' +
-						i.toString() +
-						']" type="checkbox" ' +
-						activeChecked +
-						'/></td>' +
-						'<td><select id="pixelnetDMXtype[' +
-						i.toString() +
-						']" name="pixelnetDMXtype[' +
-						i.toString() +
-						']" style="width:150px">' +
-						'<option value="0" ' +
-						pixelnetChecked +
-						'>Pixelnet</option>' +
-						'<option value="1" ' +
-						dmxChecked +
-						'>DMX</option></select></td>' +
-						'<td><input name="FPDtxtStartAddress[' +
-						i.toString() +
-						']" id="FPDtxtStartAddress[' +
-						i.toString() +
-						']" type="text" size="8" value="' +
-						startAddress.toString() +
-						'"/></td>' +
-						'</tr>';
-				}
-			} else {
-				innerHTML = 'No Results Found';
-			}
-			var results = document.getElementById('tblOutputs');
-			results.innerHTML = innerHTML;
-		})
-		.fail(function () {
-			DialogError('DMX Read Failed', 'Failed to read PixelnetDMX outputs');
-		});
-}
-
 function SetUniverseRowInputNames (row, id) {
 	var fields = Array(
 		'rowGrip',
@@ -4055,45 +3990,6 @@ function CloneUniverse () {
 	);
 	var cloneNumber = Number(answer);
 	CloneUniverses(cloneNumber);
-}
-
-function ClonePixelnetDMXoutput () {
-	var answer = prompt('How many outputs to clone from selected output?', '1');
-	var cloneNumber = Number(answer);
-	var selectIndex = (PixelnetDMXoutputSelected - 1).toString();
-	if (!isNaN(cloneNumber)) {
-		if (PixelnetDMXoutputSelected + cloneNumber - 1 < 12) {
-			var active = document.getElementById(
-				'FPDchkActive[' + selectIndex + ']'
-			).value;
-			var pixelnetDMXtype = document.getElementById(
-				'pixelnetDMXtype[' + selectIndex + ']'
-			).value;
-			var size = pixelnetDMXtype == '0' ? 4096 : 512;
-			var startAddress =
-				Number(
-					document.getElementById('FPDtxtStartAddress[' + selectIndex + ']')
-						.value
-				) + size;
-			for (
-				i = PixelnetDMXoutputSelected;
-				i < PixelnetDMXoutputSelected + cloneNumber;
-				i++
-			) {
-				document.getElementById('pixelnetDMXtype[' + i + ']').value =
-					pixelnetDMXtype;
-				document.getElementById('FPDtxtStartAddress[' + i + ']').value =
-					startAddress.toString();
-				document.getElementById('FPDchkActive[' + i + ']').value = active;
-				startAddress += size;
-			}
-			$.jGrowl('' + cloneNumber + ' Outputs Cloned', { themeState: 'success' });
-		}
-	} else {
-		DialogError('Clone Output', 'Error, invalid number', {
-			themeState: 'success'
-		});
-	}
 }
 
 function postUniverseJSON (input) {
@@ -4326,10 +4222,6 @@ function validateNumber (textbox, minimum, maximum) {
 		result = false;
 		alert(textbox.value + ' is not between ' + minimum + ' and ' + maximum);
 	}
-}
-
-function ReloadPixelnetDMX () {
-	getPixelnetDMXoutputs('TRUE');
 }
 
 function StartNextScheduledItemNow () {

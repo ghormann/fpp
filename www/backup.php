@@ -59,7 +59,6 @@ $system_config_areas = array(
         'friendly_name' => 'Channel Outputs (Universe, Falcon, LED Panels, etc.)',
         'file' => array(
             'universes' => array('type' => 'file', 'location' => $settings['universeOutputs']),
-            'falcon_pixelnet_DMX' => array('type' => 'function', 'location' => array('backup' => 'LoadPixelnetDMXFiles', 'restore' => 'SavePixelnetDMXFiles')),
             'pixel_strings' => array('type' => 'file', 'location' => $settings['co-pixelStrings']),
             'bbb_strings' => array('type' => 'file', 'location' => $settings['co-bbbStrings']),
             'pwm' => array('type' => 'file', 'location' => $settings['co-pwm']),
@@ -984,25 +983,6 @@ function processRestoreData($restore_area, $restore_area_data, $backup_version)
         WriteSettingToFile('rebootFlag', 1);
     }
 
-    //PIXELNET/DMX (FPD) RESTORATION
-    //    if ($restore_area_key == "pixelnet_DMX") {
-    //        //Just overwrite the universes file
-    //        $pixlnet_filepath = $system_config_areas['pixelnetDMX']['file'];
-    //        $data = implode("\n", $restore_area_data);
-    //        $save_result = file_put_contents($pixlnet_filepath, $data);
-    //        $settings_restored[$restore_area_key] = $save_result;
-    //    }
-    //
-    //    //DEPRECATED - UNIVERSE RESTORATION
-    //    if ($restore_area_key == "universes") {
-    //        //Just overwrite the universes file
-    //        $universe_filepath = $system_config_areas['universes']['file'];
-    //        $data = implode("\n", $restore_area_data);
-    //        $save_result = file_put_contents($universe_filepath, $data);
-    //
-    //        $settings_restored[$restore_area_key] = $save_result;
-    //    }
-
     //finally if there was no data for the restore area remove it's key for tracking attempts, this is fine here as the separate restore area tests above will avoid restore areas with no data
     if ($restore_data_is_empty) {
         unset($settings_restored[$restore_area_key]);
@@ -1045,10 +1025,11 @@ function processRestoreDataArray($restore_area_key, $restore_area_sub_key, $rest
     //Version 2 backups need to restore the schedule file to the old locations (auto converted on FPPD restart)
     //Version 3 backups need to restore the schedule to it's new json location
     //Version 4 backups - nothing changed
-    //Version 5 backups - FPD/Falcon Pixlenet at the root of ['channelOutputs']['falcon_pixelnet_DMX'] is FPDv1 data
-    //Version 6 backups - FPD/Falcon Pixlenet DMX data is keyed by the file it came from to more easily support a future version
+    //Version 5 backups - FPD/Falcon Pixelnet at the root of ['channelOutputs']['falcon_pixelnet_DMX'] is FPDv1 data
+    //Version 6 backups - FPD/Falcon Pixelnet DMX data is keyed by the file it came from to more easily support a future version
     //                  - ['channelOutputs']['falcon_pixelnet_DMX'] will contain an additional key for each FPD file read
     //                  - eg Falcon.FPDV1 and in the future Falcon.F16V2
+    //     Note: FPD/Falcon Pixelnet is no longer supported
     //Version >7.2 backups - Panel layout is generated from the actual panel config (using col & row data) if the layout doesn't exist anywhere
     //                    - Single Panel size is generated from the same config and also written to the system settings
 
@@ -1175,16 +1156,6 @@ function processRestoreDataArray($restore_area_key, $restore_area_sub_key, $rest
                                 //                                    else if ($backup_version == 3){
                                 //                                    //restore it to the new json file - don't adjust the path it'll go to configured path
                                 //                                    }
-                            }
-
-                            //if restore sub-area is falcon_pixelnet_DMX (under channelOutputs), determine how to restore it based on the $backup_version
-                            if (strtolower($restore_areas_idx) == "falcon_pixelnet_dmx") {
-                                //For FPD, backups from version 5 and under contain Falcon.FPDV1 data at it's root, extract and re-key the data, so it can be used correctly by the restore function
-                                //This change was also made part way through the usage of version 6, we can check the version and presence of the Falcon.FPDV1 key and do the same thing
-                                if ($backup_version <= 5 || ($backup_version == 6 and !array_key_exists('Falcon.FPDV1', $final_file_restore_data))) {
-                                    $FPD_temp = array('Falcon.FPDV1' => $final_file_restore_data);
-                                    $final_file_restore_data = $FPD_temp;
-                                }
                             }
 
                             ///////////////////////////////////////////////////
@@ -1501,255 +1472,6 @@ function RestoreConfigFolderConfigs($restore_data)
 
     return $save_result;
 }
-
-/**
- * This function acts as a wrapper to collect the Falcon.FPDV1 and Falcon.FPDV2 files
- * @return array
- */
-function LoadPixelnetDMXFiles()
-{
-    global $settings;
-
-    $FPD_V1_data = array();
-    $FPD_V2_data = array();
-    $return_data = array();
-
-    //check if the FPDV1 file exists
-    if (file_exists($settings['configDirectory'] . "/Falcon.FPDV1")) {
-        $FPD_V1_data = LoadPixelnetDMXFile_FPDv1();
-        //If data is valid put into return array to be saved into the JSON file
-        if (is_array($FPD_V1_data) && !empty($FPD_V1_data)) {
-            $return_data['Falcon.FPDV1'] = $FPD_V1_data;
-        }
-    }
-
-    //    if (file_exists($settings['configDirectory'] . "/Falcon.F16V2-alpha") || file_exists($settings['configDirectory'] . "/Falcon.F16V2")) {
-//        $FPD_V2_data = LoadPixelnetDMXFile_FPDV2();
-//
-//        //If data is valid put into return array to be saved into the JSON file
-//        if (is_array($FPD_V1_data) && !empty($FPD_V1_data)) {
-//            $return_data['Falcon.F16V2'] = $FPD_V2_data;
-//        }
-//    }
-    return $return_data;
-}
-
-/**
- * This function acts as a wrapper to restore the Falcon.FPDV1 and Falcon.FPDV2 files
- * depending on what restore data is available, we'll call the relevant function to restore data data
- * @param $restore_data array FPD data to restore
- * @return array
- */
-function SavePixelnetDMXFiles($restore_data)
-{
-    $FPD_V1_Restore_data = false;
-    $FPD_V2_Restore_data = false;
-    $write_status_arr = array();
-
-    //check if the FPDV1 file exists
-    if (array_key_exists('Falcon.FPDV1', $restore_data) && !empty($restore_data['Falcon.FPDV1'])) {
-        $FPD_V1_Restore_data = SavePixelnetDMXFile_FPDv1($restore_data['Falcon.FPDV1']);
-        $write_status_arr['Falcon.FPDV1'] = $FPD_V1_Restore_data;
-    }
-
-    //    if (array_key_exists('Falcon.F16V2-alpha', $restore_data) && !empty($restore_data['Falcon.F16V2-alpha'])) {
-//        $FPD_V2_Restore_data = SavePixelnetDMXFile_F16v2Alpha($restore_data['Falcon.F16V2-alpha']);
-//
-//        $write_status_arr['Falcon.F16V2-alpha'] = $FPD_V2_Restore_data;
-//    } else if (array_key_exists('Falcon.F16V2', $restore_data) && !empty($restore_data['Falcon.F16V2'])) {
-//        $FPD_V2_Restore_data = SavePixelnetDMXFile_F16v2Alpha($restore_data['Falcon.F16V2']);
-//
-//        $write_status_arr['Falcon.F16V2'] = $FPD_V2_Restore_data;
-//    }
-
-    return $write_status_arr;
-}
-
-/**
- * Reads the Falcon.FPDV1 - Falcon Pixelnet/DMX file
- * extracted & modified from channel_get_pixelnetDMX() in /api/controllers/channel.php
- *
- * @return array|void
- */
-function LoadPixelnetDMXFile_FPDv1()
-{
-    global $settings;
-    //Pull in the class
-    require_once 'pixelnetdmxentry.php';
-    //Store data in an array instead of session
-    $return_data = array();
-
-    //    if (@filesize($settings['configDirectory'] . "/Falcon.FPDV1") < 1024) {
-    //        return $return_data;
-    //    }
-
-    $f = fopen($settings['configDirectory'] . "/Falcon.FPDV1", "rb");
-    if ($f == false) {
-        fclose($f);
-        //No file exists add one and save to new file.
-        $address = 1;
-        for ($i = 0; $i < 12; $i++) {
-            $return_data[] = new PixelnetDMXentry(1, 0, $address);
-            $address += 4096;
-        }
-    } else {
-        $s = fread($f, 1024);
-        fclose($f);
-        $sarr = unpack("C*", $s);
-
-        $dataOffset = 7;
-
-        $i = 0;
-        for ($i = 0; $i < 12; $i++) {
-            $outputOffset = $dataOffset + (4 * $i);
-            $active = $sarr[$outputOffset + 0];
-            $startAddress = $sarr[$outputOffset + 1];
-            $startAddress += $sarr[$outputOffset + 2] * 256;
-            $type = $sarr[$outputOffset + 3];
-            $return_data[] = new PixelnetDMXentry($active, $type, $startAddress);
-        }
-    }
-
-    return $return_data;
-}
-
-/**
- * TODO Reads the Falcon.FPDV2 - Falcon Pixelnet/DMX file
- * extracted & modified from channel_get_pixelnetDMX() in /api/controllers/channel.php
- *
- * @return array|void
- */
-function LoadPixelnetDMXFile_FPDV2()
-{
-    //TODO (doesn't appear to be any code to reference for reading these files in /api/controllers/channel.php),, channel_get_pixelnetDMX() in the API is currently only reading the FPDv1 file
-    return null;
-}
-
-/**
- * Restores the FPDv1 channel data from the supplied array
- * extracted & modified from SaveFPDv1() in /api/controllers/channel.php
- *
- * @param $restore_data array FPDv1 data to restore
- * @return bool Success state file write
- */
-function SavePixelnetDMXFile_FPDv1($restore_data)
-{
-    global $settings;
-    $outputCount = 12;
-    $write_status = false;
-    if (!empty($restore_data) && is_array($restore_data)) {
-
-        $carr = array();
-        for ($i = 0; $i < 1024; $i++) {
-            $carr[$i] = 0x0;
-        }
-
-        $i = 0;
-        // Header
-        $carr[$i++] = 0x55;
-        $carr[$i++] = 0x55;
-        $carr[$i++] = 0x55;
-        $carr[$i++] = 0x55;
-        $carr[$i++] = 0x55;
-        $carr[$i++] = 0xCC;
-
-        for ($o = 0; $o < $outputCount; $o++) {
-
-            // Active
-            $active = 0;
-            $carr[$i++] = 0;
-            if (isset($restore_data[$o]['active']) && ($restore_data[$o]['active'] || $restore_data[$o]['active'] == '1' || intval($restore_data[$o]['active']) == 1)) {
-                $active = 1;
-                $carr[$i - 1] = 1;
-            }
-
-            // Start Address
-            $startAddress = intval($restore_data[$o]['startAddress']);
-            $carr[$i++] = $startAddress % 256;
-            $carr[$i++] = $startAddress / 256;
-
-            // Type
-            $type = intval($restore_data[$o]['type']);
-            $carr[$i++] = $type;
-        }
-        $f = fopen($settings['configDirectory'] . "/Falcon.FPDV1", "wb");
-
-        if (fwrite($f, implode(array_map("chr", $carr)), 1024) === false) {
-            $write_status = false;
-        } else {
-            $write_status = true;
-        }
-
-        fclose($f);
-
-    }
-    return $write_status;
-}
-
-/**
- * Restores the FPDv2 channel data from the supplied array
- * extracted & modified from SaveFPDv1() in /api/controllers/channel.php
- *
- * @param $restore_data array FPDv2 data to restore
- * @return bool Success state file write
- */
-//function SavePixelnetDMXFile_F16v2Alpha($restore_data)
-//{
-//    global $settings;
-//    $outputCount = 16;
-//    $write_status = false;
-//
-//    if (!empty($restore_data) && is_array($restore_data)) {
-//        $carr = array();
-//        for ($i = 0; $i < 1024; $i++) {
-//            $carr[$i] = 0x0;
-//        }
-//
-//        $i = 0;
-//
-//        // Header
-//        $carr[$i++] = 0x55;
-//        $carr[$i++] = 0x55;
-//        $carr[$i++] = 0x55;
-//        $carr[$i++] = 0x55;
-//        $carr[$i++] = 0x55;
-//        $carr[$i++] = 0xCD;
-//
-//        // Some byte
-//        $carr[$i++] = 0x01;
-//
-//        for ($o = 0; $o < $outputCount; $o++) {
-//            $cur = $restore_data[$o];
-//            $nodeCount = $cur['nodeCount'];
-//            $carr[$i++] = intval($nodeCount % 256);
-//            $carr[$i++] = intval($nodeCount / 256);
-//
-//            $startChannel = $cur['startChannel'] - 1; // 0-based values in config file
-//            $carr[$i++] = intval($startChannel % 256);
-//            $carr[$i++] = intval($startChannel / 256);
-//
-//            // Node Type is set on groups of 4 ports
-//            $carr[$i++] = intval($cur['nodeType']);
-//
-//            $carr[$i++] = intval($cur['rgbOrder']);
-//            $carr[$i++] = intval($cur['direction']);
-//            $carr[$i++] = intval($cur['groupCount']);
-//            $carr[$i++] = intval($cur['nullNodes']);
-//        }
-//
-//        $f = fopen($settings['configDirectory'] . "/Falcon.F16V2-alpha", "wb");
-//
-//        if (fwrite($f, implode(array_map("chr", $carr)), 1024) === false) {
-//            $write_status = false;
-//        } else {
-//            $write_status = true;
-//        }
-//
-//        fclose($f);
-//    }
-//
-//    return $write_status;
-//}
 
 /**
  * Performs all the work to gather files to be backed up for the specified backup area

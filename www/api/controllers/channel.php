@@ -1,7 +1,5 @@
 <?php
 
-require_once '../pixelnetdmxentry.php';
-
 //GET /api/channel/input/stats
 function channel_input_get_stats()
 {
@@ -36,80 +34,6 @@ function channel_input_delete_stats()
     return json($result);
 }
 
-
-//POST /api/channel/output/PixelnetDMX
-function channel_put_pixelnetDMX()
-{
-    $json = strval(file_get_contents('php://input'));
-    $input = json_decode($json, true);
-    $status = "OK";
-
-    if (!isset($input['model'])) {
-        $status = 'Failure, no model supplied';
-        return json(array("status" => $status));
-    }
-
-    $model = $input['model'];
-    $firmware = $input['firmware'];
-
-    if ($model == "FPDv1") {
-        SaveFPDv1($input["pixels"]);
-    } else {
-        $status = 'Failure, Unknown Model';
-        return json(array("status" => $status));
-    }
-
-    //Trigger a JSON Configuration Backup
-    GenerateBackupViaAPI('PixelnetDMX Output was modified.');
-
-    return json(array("status" => "OK"));
-}
-
-function SaveFPDv1($pixels)
-{
-    global $settings;
-    $outputCount = 12;
-
-    $carr = array();
-    for ($i = 0; $i < 1024; $i++) {
-        $carr[$i] = 0x0;
-    }
-
-    $i = 0;
-    // Header
-    $carr[$i++] = 0x55;
-    $carr[$i++] = 0x55;
-    $carr[$i++] = 0x55;
-    $carr[$i++] = 0x55;
-    $carr[$i++] = 0x55;
-    $carr[$i++] = 0xCC;
-
-    for ($o = 0; $o < $outputCount; $o++) {
-        $cur = $pixels[$o];
-
-        // Active
-        $active = 0;
-        $carr[$i++] = 0;
-        if ($cur['active']) {
-            $active = 1;
-            $carr[$i - 1] = 1;
-        }
-
-        // Start Address
-        $startAddress = intval($cur['address']);
-        $carr[$i++] = $startAddress % 256;
-        $carr[$i++] = $startAddress / 256;
-
-        // Type
-        $type = intval($cur['type']);
-        $carr[$i++] = $type;
-    }
-    $f = fopen($settings['configDirectory'] . "/Falcon.FPDV1", "wb");
-    fwrite($f, implode(array_map("chr", $carr)), 1024);
-
-    fclose($f);
-    SendCommand('w');
-}
 
 //GET /api/channel/output/processor
 function channel_get_output_processors()
@@ -161,52 +85,6 @@ function channel_get_output()
         $rc["status"] = "OK";
     } else {
         http_response_code(404);
-    }
-
-    return json($rc);
-}
-
-// GET /api/channel/output/PixelnetDMX
-function channel_get_pixelnetDMX()
-{
-    global $settings;
-    $f = fopen($settings['configDirectory'] . "/Falcon.FPDV1", "rb");
-    $dataFile = null;
-
-    if ($f == false) {
-        //fclose($f);
-        //No file exists add one and save to new file.
-        $address = 1;
-        for ($i = 0; $i < 12; $i++) {
-            $dataFile[] = new PixelnetDMXentry(1, 0, $address);
-            $address += 4096;
-        }
-    } else {
-        $s = fread($f, 1024);
-        fclose($f);
-        $sarr = unpack("C*", $s);
-
-        $dataOffset = 7;
-
-        $i = 0;
-        for ($i = 0; $i < 12; $i++) {
-            $outputOffset = $dataOffset + (4 * $i);
-            $active = $sarr[$outputOffset + 0];
-            $startAddress = $sarr[$outputOffset + 1];
-            $startAddress += $sarr[$outputOffset + 2] * 256;
-            $type = $sarr[$outputOffset + 3];
-            $dataFile[] = new PixelnetDMXentry($active, $type, $startAddress);
-        }
-    }
-
-    $rc = array();
-    $i = 0;
-    for ($i = 0; $i < count($dataFile); $i++) {
-        $cur = array();
-        $cur["active"] = $dataFile[$i]->active;
-        $cur["type"] = $dataFile[$i]->type;
-        $cur["startAddress"] = $dataFile[$i]->startAddress;
-        array_push($rc, $cur);
     }
 
     return json($rc);

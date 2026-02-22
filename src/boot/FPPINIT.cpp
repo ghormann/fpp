@@ -1685,14 +1685,6 @@ static void setupAudio() {
     exec("/usr/bin/amixer -c " + std::to_string(card) + " set " + mixer + " " + std::to_string(v) + "% > /dev/null 2>&1");
     setRawSetting("AudioCardType", cardType);
 }
-void detectFalconHardware() {
-#ifdef PLATFORM_PI
-    printf("FPP - Checking for Falcon hardware on SPI port\n");
-    int fnd = system("/opt/fpp/src/fppd -H");
-    setRawSetting("FalconHardwareDetected", fnd ? "1" : "0");
-#endif
-}
-
 void setupKiosk(bool force = false) {
     int km = getRawSettingInt("Kiosk", 0);
     if (km || force) {
@@ -2030,7 +2022,6 @@ int main(int argc, char* argv[]) {
             detectNetworkModules();
         }
         setupTimezone(); // this may not have worked in the init phase, try again
-        detectFalconHardware();
         setFileOwnership();
         checkInstallPackages();
         startZRAMSwap();

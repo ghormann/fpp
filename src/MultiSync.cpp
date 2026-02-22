@@ -49,7 +49,6 @@
 #include "Sequence.h"
 #include "command.h"
 #include "common.h"
-#include "falcon.h"
 #include "fppversion.h"
 #include "log.h"
 #include "settings.h"
@@ -2190,24 +2189,6 @@ void MultiSync::ProcessControlPacket(bool pingOnly) {
                 continue;
             }
             unsigned char* inBuf = rcvBuffers[msg];
-
-            if (inBuf[0] == 0x55 || inBuf[0] == 0xCC) {
-                struct in_addr recvAddr;
-                struct cmsghdr* cmsg;
-
-                for (cmsg = CMSG_FIRSTHDR(&rcvMsgs[msg].msg_hdr); cmsg != NULL; cmsg = CMSG_NXTHDR(&rcvMsgs[msg].msg_hdr, cmsg)) {
-                    if (cmsg->cmsg_level != IPPROTO_IP || cmsg->cmsg_type != IP_PKTINFO) {
-                        continue;
-                    }
-
-                    struct in_pktinfo* pi = (struct in_pktinfo*)CMSG_DATA(cmsg);
-                    recvAddr = pi->ipi_addr;
-                    recvAddr = pi->ipi_spec_dst;
-                }
-
-                ProcessFalconPacket(m_receiveSock, (struct sockaddr_in*)&rcvSrcAddr[msg], recvAddr, inBuf);
-                continue;
-            }
 
             if (len < sizeof(ControlPkt)) {
                 LogErr(VB_SYNC, "Error: Received control packet too short\n");

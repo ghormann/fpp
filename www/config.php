@@ -162,7 +162,6 @@ $logDirectory = $mediaDirectory . "/logs";
 $uploadDirectory = $mediaDirectory . "/upload";
 $virtualDisplayAssetsDirectory = $mediaDirectory . "/virtualdisplay_assets";
 $universeFile = $mediaDirectory . "/universes";
-$pixelnetFile = $mediaDirectory . "/pixelnetDMX";
 $scheduleFile = $mediaDirectory . "/schedule";
 $bytesFile = $mediaDirectory . "/bytesReceived";
 $outputProcessorsFile = $mediaDirectory . "/config/outputprocessors.json";
@@ -192,7 +191,7 @@ if ($debug) {
     error_log("uploads: $uploadDirectory");
     error_log("plugins: $pluginDirectory");
     error_log("universe: $universeFile");
-    error_log("pixelnet: $pixelnetFile");
+
     error_log("schedule: $scheduleFile");
     error_log("outputProcessors: $outputProcessorsFile");
     error_log("bytes: $bytesFile");
@@ -412,7 +411,7 @@ if ($fd) {
         global $mediaDirectory, $musicDirectory, $sequenceDirectory, $playlistDirectory;
         global $eventDirectory, $videoDirectory, $scriptDirectory, $logDirectory, $exim4Directory;
         global $pluginDirectory, $emailenable, $emailguser, $emailgpass, $emailfromtext, $emailtoemail;
-        global $universeFile, $pixelnetFile, $scheduleFile, $bytesFile, $outputProcessorsFile;
+        global $universeFile, $scheduleFile, $bytesFile, $outputProcessorsFile;
 
         // Parse the file, assuming it exists
         $data = fgets($fd);
@@ -499,9 +498,6 @@ if ($fd) {
                 break;
             case "universeFile":
                 $universeFile = $value;
-                break;
-            case "pixelnetFile":
-                $pixelnetFile = $value;
                 break;
             case "scheduleFile":
                 $scheduleFile = $value;
@@ -639,7 +635,7 @@ if ($debug) {
     error_log("uploads: $uploadDirectory");
     error_log("plugins: $pluginDirectory");
     error_log("universe: $universeFile");
-    error_log("pixelnet: $pixelnetFile");
+
     error_log("schedule: $scheduleFile");
     error_log("outputProcessors: $outputProcessorsFile");
     error_log("bytes: $bytesFile");

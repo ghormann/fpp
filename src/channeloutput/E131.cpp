@@ -31,7 +31,6 @@
 
 #include "ChannelOutputSetup.h"
 #include "E131.h"
-#include "FPD.h"
 #include "Universe.h"
 #include "channeloutputthread.h"
 #include "e131defs.h"

@@ -688,7 +688,6 @@ function ZipConfigs($zip)
         "config/model-overlays.json",
         "config/outputprocessors.json",
         "config/schedule.json",
-        "pixelnetDMX",
         "settings",
         "universes",
         "fpp-info.json",

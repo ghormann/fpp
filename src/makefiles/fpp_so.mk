@@ -7,7 +7,6 @@ OBJECTS_fpp_so += \
 	channeloutput/ChannelOutputSetup.o \
 	channeloutput/channeloutputthread.o \
 	channeloutput/ColorOrder.o \
-	channeloutput/FPD.o \
 	channeloutput/Matrix.o \
 	channeloutput/PanelMatrix.o \
 	channeloutput/PanelInterleaveHandler.o \
@@ -48,7 +47,6 @@ OBJECTS_fpp_so += \
 	effects.o \
 	EPollManager.o \
 	Events.o \
-	falcon.o \
 	FileMonitor.o \
 	fppversion.o \
 	framebuffer/FrameBuffer.o \

@@ -31,7 +31,6 @@ std::string getFPPMediaDir(const std::string& path = "");
 #define FPP_DIR_VIDEO(a) getFPPMediaDir(std::string("/videos") + a)
 #define FPP_DIR_CRASHES(a) getFPPMediaDir(std::string("/crashes") + a)
 #define FPP_FILE_LOG getFPPMediaDir("/logs/fppd.log")
-#define FPP_FILE_PIXELNET getFPPMediaDir("/config/Falcon.FPDV1")
 #define FPP_FILE_SETTINGS getFPPMediaDir("/settings")
 
 typedef enum fppMode {

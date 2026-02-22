@@ -27,7 +27,7 @@
 		678A066027D129D300C79533 /* channeloutput */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = channeloutput; sourceTree = SOURCE_ROOT; };
 		678A066127D129D300C79533 /* fppd.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = fppd.cpp; sourceTree = SOURCE_ROOT; };
 		678A066227D129D300C79533 /* scripts.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = scripts.cpp; sourceTree = SOURCE_ROOT; };
-		678A066327D129D300C79533 /* falcon.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = falcon.cpp; sourceTree = SOURCE_ROOT; };
+
 		678A066427D129D300C79533 /* FrameBuffer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FrameBuffer.cpp; sourceTree = SOURCE_ROOT; };
 		678A066527D129D300C79533 /* gpio.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gpio.h; sourceTree = SOURCE_ROOT; };
 		678A066627D129D300C79533 /* gpio.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = gpio.cpp; sourceTree = SOURCE_ROOT; };
@@ -57,7 +57,7 @@
 		678A067E27D129D400C79533 /* effects.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = effects.h; sourceTree = SOURCE_ROOT; };
 		678A067F27D129D400C79533 /* settings.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = settings.cpp; sourceTree = SOURCE_ROOT; };
 		678A068027D129D400C79533 /* Player.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Player.cpp; sourceTree = SOURCE_ROOT; };
-		678A068127D129D400C79533 /* falcon.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = falcon.h; sourceTree = SOURCE_ROOT; };
+
 		678A068227D129D400C79533 /* ScheduleEntry.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ScheduleEntry.cpp; sourceTree = SOURCE_ROOT; };
 		678A068327D129D400C79533 /* CapeUtils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CapeUtils.cpp; sourceTree = SOURCE_ROOT; };
 		678A068427D129D400C79533 /* common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = common.h; sourceTree = SOURCE_ROOT; };
@@ -120,8 +120,6 @@
 				678A068927D129D400C79533 /* e131defs.h */,
 				678A065927D129D300C79533 /* effects.cpp */,
 				678A067E27D129D400C79533 /* effects.h */,
-				678A066327D129D300C79533 /* falcon.cpp */,
-				678A068127D129D400C79533 /* falcon.h */,
 				678A065F27D129D300C79533 /* fpp-pch.h */,
 				678A067727D129D400C79533 /* fpp.h */,
 				678A066127D129D300C79533 /* fppd.cpp */,
