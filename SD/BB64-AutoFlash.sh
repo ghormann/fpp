@@ -38,6 +38,9 @@ sed -i "s|default flashEMMC|default microSD|g" /mnt/extlinux/extlinux.conf
 rm -f /mnt/fpp_expand_rootfs
 umount /mnt
 
-shutdown -h now
+echo 1 > /proc/sys/kernel/sysrq
+echo s > /proc/sysrq-trigger
+echo u > /proc/sysrq-trigger
+echo o > /proc/sysrq-trigger
 
 
